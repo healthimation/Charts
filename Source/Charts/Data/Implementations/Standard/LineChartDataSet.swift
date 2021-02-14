@@ -151,6 +151,10 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     
     /// `true` if drawing circles for this DataSet is enabled, `false` ifnot
     open var drawCircleHoleEnabled = true
+
+    /// If true, drawing circles as rectangles
+    // WORKAROUND TEMP
+    open var drawCirclesAsRectangles = false
     
     /// `true` if drawing the circle-holes is enabled, `false` ifnot.
     open var isDrawCircleHoleEnabled: Bool { return drawCircleHoleEnabled }

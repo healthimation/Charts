@@ -54,6 +54,9 @@ public protocol ILineChartDataSet: ILineRadarChartDataSet
     
     /// If true, drawing circles is enabled
     var drawCirclesEnabled: Bool { get set }
+
+    /// If true, drawing circles as rectangles
+    var drawCirclesAsRectangles: Bool { get set }
     
     /// `true` if drawing circles for this DataSet is enabled, `false` ifnot
     var isDrawCirclesEnabled: Bool { get }
