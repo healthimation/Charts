@@ -28,6 +28,7 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     {
         // default color
         circleColors.append(NSUIColor(red: 140.0/255.0, green: 234.0/255.0, blue: 255.0/255.0, alpha: 1.0))
+        circleHoleColors.append(NSUIColor.white)
     }
     
     public required init()
@@ -75,6 +76,7 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     open var circleHoleRadius = CGFloat(4.0)
     
     open var circleColors = [NSUIColor]()
+    open var circleHoleColors = [NSUIColor]()
     
     /// - Returns: The color at the given index of the DataSet's circle-color array.
     /// Performs a IndexOutOfBounds check by modulus.
@@ -88,6 +90,17 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
         }
         return circleColors[index]
     }
+
+    open func getCircleHoleColor(atIndex index: Int) -> NSUIColor?
+    {
+        let size = circleHoleColors.count
+        let index = index % size
+        if index >= size
+        {
+            return nil
+        }
+        return circleHoleColors[index]
+    }
     
     /// Sets the one and ONLY color that should be used for this DataSet.
     /// Internally, this recreates the colors array and adds the specified color.
@@ -96,17 +109,35 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
         circleColors.removeAll(keepingCapacity: false)
         circleColors.append(color)
     }
+
+   open func setCircleHoleColor(_ color: NSUIColor)
+   {
+       circleHoleColors.removeAll(keepingCapacity: false)
+       circleHoleColors.append(color)
+   }
     
-    open func setCircleColors(_ colors: NSUIColor...)
+    open func setCircleColors(_ colors: [NSUIColor])
     {
         circleColors.removeAll(keepingCapacity: false)
         circleColors.append(contentsOf: colors)
+    }
+
+    open func setCircleHoleColors(_ colors: [NSUIColor])
+    {
+        circleHoleColors.removeAll(keepingCapacity: false)
+        circleHoleColors.append(contentsOf: colors)
     }
     
     /// Resets the circle-colors array and creates a new one
     open func resetCircleColors(_ index: Int)
     {
         circleColors.removeAll(keepingCapacity: false)
+    }
+
+    // /// Resets the circle-hole-colors array and creates a new one
+    open func resetCircleHoleColors(_ index: Int)
+    {
+        circleHoleColors.removeAll(keepingCapacity: false)
     }
     
     /// If true, drawing circles is enabled
@@ -116,7 +147,7 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     open var isDrawCirclesEnabled: Bool { return drawCirclesEnabled }
     
     /// The color of the inner circle (the circle-hole).
-    open var circleHoleColor: NSUIColor? = NSUIColor.white
+    // open var circleHoleColor: NSUIColor? = NSUIColor.white
     
     /// `true` if drawing circles for this DataSet is enabled, `false` ifnot
     open var drawCircleHoleEnabled = true
@@ -157,7 +188,7 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     {
         let copy = super.copy(with: zone) as! LineChartDataSet
         copy.circleColors = circleColors
-        copy.circleHoleColor = circleHoleColor
+        copy.circleHoleColors = circleHoleColors
         copy.circleRadius = circleRadius
         copy.circleHoleRadius = circleHoleRadius
         copy.cubicIntensity = cubicIntensity
