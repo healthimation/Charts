@@ -154,6 +154,11 @@ open class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
 
     /// If true, drawing circles as rectangles
     // WORKAROUND TEMP
+    //
+    // if true, drawing rectangles instead of circles
+    // IMPORTANT: counting circle radius as half of a size of a rectandle side in this case
+    // TODO: this should be reimplemented to use general size settings and SHAPES probably
+    //
     open var drawCirclesAsRectangles = false
     
     /// `true` if drawing the circle-holes is enabled, `false` ifnot.
