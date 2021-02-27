@@ -39,4 +39,14 @@ public protocol IBarChartDataSet: IBarLineScatterCandleBubbleChartDataSet
     
     /// array of labels used to describe the different values of the stacked bars
     var stackLabels: [String] { get set }
+
+    /// highlight color of a line if linehighlight enabled
+    var highlightLineColor: NSUIColor { get set }
+
+    /// draw highlight line additionally?
+    var highlightLineEnabled: Bool { get set }
+
+    /// space between highlight line and top of a bar
+    /// I think this is bad design
+    var highlightLineBottomMargin: CGFloat { get set }
 }

@@ -800,9 +800,18 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 }
                 
                 prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth / 2.0, trans: trans, rect: &barRect)
+            
+                if(set.highlightLineEnabled) {
+                    let x = high.x // get the x-position
+                    let y = high.y * Double(animator.phaseY)
+
+                    let pt = trans.pixelForValues(x: x, y: y)
+
+                    high.setDraw(pt: pt)
+                    drawHighlightLines(context: context, point: pt, set: set, barRect: barRect)
+                }
                 
                 setHighlightDrawPos(highlight: high, barRect: barRect)
-                
                 context.fill(barRect)
             }
         }
@@ -889,5 +898,16 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         modifier(element)
 
         return element
+    }
+
+    @objc open func drawHighlightLines(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
+    {
+        context.beginPath()
+        context.setLineWidth(set.highlightLineWidth)
+        context.setStrokeColor(set.highlightLineColor.cgColor)
+        context.move(to: CGPoint(x: point.x, y: viewPortHandler.contentTop))
+        context.addLine(to: CGPoint(x: point.x, y: barRect.origin.y - set.highlightLineBottomMargin))
+        context.strokePath()
+    
     }
 }
