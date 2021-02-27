@@ -44,7 +44,7 @@ public protocol IBarChartDataSet: IBarLineScatterCandleBubbleChartDataSet
     var highlightLineColor: NSUIColor { get set }
 
     /// draw highlight line additionally?
-    var highlightLineEnabled: Bool { get set }
+    // var highlightLineEnabled: Bool { get set }
 
     /// space between highlight line and top of a bar
     /// I think this is bad design

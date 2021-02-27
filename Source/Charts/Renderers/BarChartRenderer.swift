@@ -801,7 +801,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 
                 prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth / 2.0, trans: trans, rect: &barRect)
             
-                if(set.highlightLineEnabled) {
+                if(set.highlightLineWidth > 0.0) {
                     let x = high.x // get the x-position
                     let y = high.y * Double(animator.phaseY)
 

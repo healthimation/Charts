@@ -154,7 +154,7 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, IBarChartDat
     open var highlightLineColor = NSUIColor.black
 
     ///
-    open var highlightLineEnabled = false
+    // open var highlightLineEnabled = false
 
     ///
     open var highlightLineBottomMargin = CGFloat(2.0)
@@ -175,7 +175,7 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, IBarChartDat
 
         copy.highlightLineColor = highlightLineColor
         copy.highlightLineWidth = highlightLineWidth
-        copy.highlightLineEnabled = highlightLineEnabled
+        // copy.highlightLineEnabled = highlightLineEnabled
         copy.highlightLineBottomMargin = highlightLineBottomMargin
         return copy
     }
