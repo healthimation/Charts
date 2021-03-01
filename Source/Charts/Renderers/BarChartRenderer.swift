@@ -770,9 +770,6 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 
                 let trans = dataProvider.getTransformer(forAxis: set.axisDependency)
                 
-                context.setFillColor(set.highlightColor.cgColor)
-                context.setAlpha(set.highlightAlpha)
-                
                 let isStack = high.stackIndex >= 0 && e.isStacked
                 
                 let y1: Double
@@ -810,6 +807,9 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     high.setDraw(pt: pt)
                     drawHighlightLines(context: context, point: pt, set: set, barRect: barRect)
                 }
+                
+                context.setFillColor(set.highlightColor.cgColor)
+                context.setAlpha(set.highlightAlpha)
                 
                 setHighlightDrawPos(highlight: high, barRect: barRect)
                 context.fill(barRect)
@@ -905,6 +905,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         context.beginPath()
         context.setLineWidth(set.highlightLineWidth)
         context.setStrokeColor(set.highlightLineColor.cgColor)
+        context.setAlpha(set.highlightLineAlpha)
         context.move(to: CGPoint(x: point.x, y: viewPortHandler.contentTop))
         context.addLine(to: CGPoint(x: point.x, y: barRect.origin.y - set.highlightLineBottomMargin))
         context.strokePath()
