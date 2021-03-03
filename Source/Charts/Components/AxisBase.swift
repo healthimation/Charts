@@ -92,6 +92,8 @@ open class AxisBase: ComponentBase
     /// This could happen if two adjacent axis values are rounded to same value.
     /// If using granularity this could be avoided by having fewer axis values visible.
     @objc open var granularityEnabled = false
+
+    @objc open var disableIntervalNormalization = false
     
     private var _granularity = Double(1.0)
     

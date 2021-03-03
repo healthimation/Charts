@@ -115,14 +115,16 @@ open class AxisRendererBase: Renderer
             interval = interval < axis.granularity ? axis.granularity : interval
         }
         
-        // Normalize interval
-        let intervalMagnitude = pow(10.0, Double(Int(log10(interval)))).roundedToNextSignficant()
-        let intervalSigDigit = Int(interval / intervalMagnitude)
-        if intervalSigDigit > 5
-        {
-            // Use one order of magnitude higher, to avoid intervals like 0.9 or 90
-            // if it's 0.0 after floor(), we use the old value
-            interval = floor(10.0 * intervalMagnitude) == 0.0 ? interval : floor(10.0 * intervalMagnitude)
+        if(!axis.disableIntervalNormalization) {
+            // Normalize interval
+            let intervalMagnitude = pow(10.0, Double(Int(log10(interval)))).roundedToNextSignficant()
+            let intervalSigDigit = Int(interval / intervalMagnitude)
+            if intervalSigDigit > 5
+            {
+                // Use one order of magnitude higher, to avoid intervals like 0.9 or 90
+                // if it's 0.0 after floor(), we use the old value
+                interval = floor(10.0 * intervalMagnitude) == 0.0 ? interval : floor(10.0 * intervalMagnitude)
+            }
         }
         
         var n = axis.centerAxisLabelsEnabled ? 1 : 0
