@@ -770,9 +770,6 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 
                 let trans = dataProvider.getTransformer(forAxis: set.axisDependency)
                 
-                context.setFillColor(set.highlightColor.cgColor)
-                context.setAlpha(set.highlightAlpha)
-                
                 let isStack = high.stackIndex >= 0 && e.isStacked
                 
                 let y1: Double
@@ -800,9 +797,21 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 }
                 
                 prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth / 2.0, trans: trans, rect: &barRect)
+            
+                if(set.highlightLineWidth > 0.0) {
+                    let x = high.x // get the x-position
+                    let y = high.y * Double(animator.phaseY)
+
+                    let pt = trans.pixelForValues(x: x, y: y)
+
+                    high.setDraw(pt: pt)
+                    drawHighlightLines(context: context, point: pt, set: set, barRect: barRect)
+                }
+                
+                context.setFillColor(set.highlightColor.cgColor)
+                context.setAlpha(set.highlightAlpha)
                 
                 setHighlightDrawPos(highlight: high, barRect: barRect)
-                
                 context.fill(barRect)
             }
         }
@@ -889,5 +898,17 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         modifier(element)
 
         return element
+    }
+
+    @objc open func drawHighlightLines(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
+    {
+        context.beginPath()
+        context.setLineWidth(set.highlightLineWidth)
+        context.setStrokeColor(set.highlightLineColor.cgColor)
+        context.setAlpha(set.highlightLineAlpha)
+        context.move(to: CGPoint(x: point.x, y: viewPortHandler.contentTop))
+        context.addLine(to: CGPoint(x: point.x, y: barRect.origin.y - set.highlightLineBottomMargin))
+        context.strokePath()
+    
     }
 }
