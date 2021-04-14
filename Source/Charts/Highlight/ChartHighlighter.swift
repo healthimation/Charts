@@ -48,12 +48,15 @@ open class ChartHighlighter : NSObject, IHighlighter
     {
         guard let chart = chart else { return nil }
         
+        // get all the closest dots (from all the datasets), make highlight - choose the needed later
         let closestValues = getHighlights(xValue: xVal, x: x, y: y)
         guard !closestValues.isEmpty else { return nil }
         
+        // get minimum distance in pixels from closest highlights
         let leftAxisMinDist = getMinimumDistance(closestValues: closestValues, y: y, axis: .left)
         let rightAxisMinDist = getMinimumDistance(closestValues: closestValues, y: y, axis: .right)
         
+        // not sure why this is needed
         let axis: YAxis.AxisDependency = leftAxisMinDist < rightAxisMinDist ? .left : .right
         
         let detail = closestSelectionDetailByPixel(closestValues: closestValues, x: x, y: y, axis: axis, minSelectionDistance: chart.maxHighlightDistance)
@@ -66,7 +69,6 @@ open class ChartHighlighter : NSObject, IHighlighter
     ///   - x: touch position
     ///   - y: touch position
     /// - Returns: A list of Highlight objects representing the entries closest to the given xVal.
-    /// The returned list contains two objects per DataSet (closest rounding up, closest rounding down).
     @objc open func getHighlights(xValue: Double, x: CGFloat, y: CGFloat) -> [Highlight]
     {
         var vals = [Highlight]()
@@ -90,6 +92,7 @@ open class ChartHighlighter : NSObject, IHighlighter
     }
     
     /// - Returns: An array of `Highlight` objects corresponding to the selected xValue and dataSetIndex.
+    // Get closest hightlights to the xValue in given dataSet
     internal func buildHighlights(
         dataSet set: IChartDataSet,
         dataSetIndex: Int,

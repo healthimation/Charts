@@ -81,7 +81,8 @@ open class BarChartView: BarLineChartViewBase, BarChartDataProvider
             stackIndex: -1,
             axis: h.axis)
     }
-        
+    
+    // TODO: could be used for partially visible entry check implementation
     /// - Returns: The bounding box of the specified Entry in the specified DataSet. Returns null if the Entry could not be found in the charts data.
     @objc open func getBarBounds(entry e: BarChartDataEntry) -> CGRect
     {
