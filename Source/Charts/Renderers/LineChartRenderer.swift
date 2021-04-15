@@ -785,7 +785,8 @@ open class LineChartRenderer: LineRadarRenderer
         let dataSetCount = dataProvider.lineData?.dataSetCount ?? -1
         let doesContainMultipleDataSets = dataSetCount > 1
 
-        element.accessibilityLabel = "\(doesContainMultipleDataSets ? (dataSet.label ?? "")  + ", " : "") \(label): \(elementValueText)"
+        element.accessibilityLabel = e.accessibilityLabel
+        element.accessibilityTraits = UIAccessibilityTraits.button
 
         modifier(element)
 
