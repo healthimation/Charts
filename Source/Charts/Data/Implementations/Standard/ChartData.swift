@@ -59,6 +59,7 @@ open class ChartData: NSObject
     
     @objc open func calcMinMaxY(fromX: Double, toX: Double)
     {
+        // each dataset calculates min max inside itself
         _dataSets.forEach { $0.calcMinMaxY(fromX: fromX, toX: toX) }
         // apply the new data
         calcMinMax()
@@ -72,8 +73,10 @@ open class ChartData: NSObject
         _xMax = -Double.greatestFiniteMagnitude
         _xMin = Double.greatestFiniteMagnitude
         
+        // calculated absolute min and max among all the datasets | + min and max for left and right axises
         _dataSets.forEach { calcMinMax(dataSet: $0) }
         
+        // why do we need this???? isn't all needed already happened in _dataSets.forEach { calcMinMax(dataSet: $0) } ???
         _leftAxisMax = -Double.greatestFiniteMagnitude
         _leftAxisMin = Double.greatestFiniteMagnitude
         _rightAxisMax = -Double.greatestFiniteMagnitude

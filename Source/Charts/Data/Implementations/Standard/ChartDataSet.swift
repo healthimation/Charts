@@ -106,6 +106,7 @@ open class ChartDataSet: ChartBaseDataSet
 
         guard !isEmpty else { return }
         
+        // TODO: what if the dataset have two entries with the same x-value? (what's the behavior right now?)
         let indexFrom = entryIndex(x: fromX, closestToY: Double.nan, rounding: .down)
         let indexTo = entryIndex(x: toX, closestToY: Double.nan, rounding: .up)
         
@@ -284,6 +285,7 @@ open class ChartDataSet: ChartBaseDataSet
         
         while low < high
         {
+            // what if low is 0 and high is 1?
             let m = (low + high) / 2
             
             let d1 = self[m].x - xValue

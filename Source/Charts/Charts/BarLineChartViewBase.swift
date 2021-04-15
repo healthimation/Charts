@@ -177,6 +177,7 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
 
         if _autoScaleMinMaxEnabled
         {
+            // TODO: how can we implement autoScale only after drag end?
             autoScale()
         }
 
@@ -285,22 +286,32 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         guard let data = _data
             else { return }
         
+        // includes extra points from both sides
+        // when the bar is wide for ex, it could be still visible, so we need to apply scaling for it as well
+        // even though its coord is out of view already
+        // TODO: figure out how we can exactly know if the bar is still partially visible??
         data.calcMinMaxY(fromX: self.lowestVisibleX, toX: self.highestVisibleX)
         
         _xAxis.calculate(min: data.xMin, max: data.xMax)
         
         // calculate axis range (min / max) according to provided data
         
-        if leftAxis.isEnabled
-        {
-            leftAxis.calculate(min: data.getYMin(axis: .left), max: data.getYMax(axis: .left))
-        }
+        // if leftAxis.isEnabled
+        // {
+        //     leftAxis.calculate(min: data.getYMin(axis: .left), max: data.getYMax(axis: .left))
+        // }
         
-        if rightAxis.isEnabled
-        {
-            rightAxis.calculate(min: data.getYMin(axis: .right), max: data.getYMax(axis: .right))
-        }
-        
+        // if rightAxis.isEnabled
+        // {
+        //     rightAxis.calculate(min: data.getYMin(axis: .right), max: data.getYMax(axis: .right))
+        // }
+
+        // Disabled the check on isEnabled for both
+        // TODO: maybe return the checks and use axisDependency for dataSets when the chart needs only right axis for example?
+        // PS: left axisDependency is the default
+        leftAxis.calculate(min: data.getYMin(axis: .left), max: data.getYMax(axis: .left))
+        rightAxis.calculate(min: data.getYMin(axis: .right), max: data.getYMax(axis: .right))
+
         calculateOffsets()
     }
     
