@@ -90,7 +90,7 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     @objc open var noDataFont = NSUIFont.systemFont(ofSize: 12)
     
     /// color of the no data text
-    @objc open var noDataTextColor: NSUIColor = NSUIColor.black
+    @objc open var noDataTextColor: NSUIColor = NSUIColor.init(red: 0.0, green: 119.0/255.0, blue: 133/255.0, alpha: 1.0)
 
     /// alignment of the no data text
     @objc open var noDataTextAlignment: NSTextAlignment = .left
