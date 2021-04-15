@@ -85,9 +85,9 @@ open class DataRenderer: Renderer
 
         let
         element = NSUIAccessibilityElement(accessibilityContainer: chart)
-        element.accessibilityLabel = chartDescriptionText + ". \(dataSetCount) dataset\(dataSetCount == 1 ? "" : "s"). \(dataSetDescriptionText)"
+        //add bridge for chart type
+        element.accessibilityLabel = "Chart"
         element.accessibilityFrame = chart.bounds
-        element.isHeader = true
 
         return element
     }
