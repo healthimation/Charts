@@ -26,6 +26,8 @@ public protocol IChartDataSet
     /// Calculates the min and max y-values from the Entry closest to the given fromX to the Entry closest to the given toX value.
     /// This is only needed for the autoScaleMinMax feature.
     func calcMinMaxY(fromX: Double, toX: Double)
+
+    func containsEntriesAtXValue(fromX: Double, toX: Double) -> Bool
     
     /// The minimum y-value this DataSet holds
     var yMin: Double { get }

@@ -52,6 +52,11 @@ open class ChartBaseDataSet: NSObject, IChartDataSet, NSCopying
     {
         fatalError("calcMinMaxY(fromX:, toX:) is not implemented in ChartBaseDataSet")
     }
+
+    open func containsEntriesAtXValue(fromX: Double, toX: Double) -> Bool
+    {
+        fatalError("containsEntriesAtXValue(fromX:, toX:) is not implemented in ChartBaseDataSet")
+    }
     
     open var yMin: Double
     {
