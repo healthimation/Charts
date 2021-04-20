@@ -61,8 +61,18 @@ open class ChartData: NSObject
     {
         // each dataset calculates min max inside itself
         _dataSets.forEach { $0.calcMinMaxY(fromX: fromX, toX: toX) }
+
+        var dataSetsWithDataBetween = [IChartDataSet]();
+        for i in 0 ..< _dataSets.count
+        {
+            var set = _dataSets[i];
+            if(set.containsEntriesAtXValue(fromX: fromX, toX: toX)) {
+                dataSetsWithDataBetween.append(set);
+            }
+        }
+
         // apply the new data
-        calcMinMax()
+        calcMinMax(dataSets: dataSetsWithDataBetween)
     }
     
     /// calc minimum and maximum y value over all datasets
@@ -116,6 +126,83 @@ open class ChartData: NSObject
             _rightAxisMin = firstRight!.yMin
             
             for dataSet in _dataSets
+            {
+                if dataSet.axisDependency == .right
+                {
+                    if dataSet.yMin < _rightAxisMin
+                    {
+                        _rightAxisMin = dataSet.yMin
+                    }
+                    
+                    if dataSet.yMax > _rightAxisMax
+                    {
+                        _rightAxisMax = dataSet.yMax
+                    }
+                }
+            }
+        }
+    }
+
+    /// calc minimum and maximum y value over all datasets
+    @objc open func calcMinMax(dataSets: [IChartDataSet])
+    {
+
+        var internalDataSets = dataSets;
+        if(internalDataSets == nil || internalDataSets.count == 0) {
+            internalDataSets = _dataSets;
+            if(internalDataSets == nil) {
+                return;
+            }
+        }
+
+        _yMax = -Double.greatestFiniteMagnitude
+        _yMin = Double.greatestFiniteMagnitude
+        _xMax = -Double.greatestFiniteMagnitude
+        _xMin = Double.greatestFiniteMagnitude
+        
+        // calculated absolute min and max among all the datasets | + min and max for left and right axises
+        internalDataSets.forEach { calcMinMax(dataSet: $0) }
+        
+        // why do we need this???? isn't all needed already happened in _dataSets.forEach { calcMinMax(dataSet: $0) } ???
+        _leftAxisMax = -Double.greatestFiniteMagnitude
+        _leftAxisMin = Double.greatestFiniteMagnitude
+        _rightAxisMax = -Double.greatestFiniteMagnitude
+        _rightAxisMin = Double.greatestFiniteMagnitude
+        
+        // left axis
+        let firstLeft = getFirstLeft(dataSets: internalDataSets)
+        
+        if firstLeft !== nil
+        {
+            _leftAxisMax = firstLeft!.yMax
+            _leftAxisMin = firstLeft!.yMin
+            
+            for dataSet in internalDataSets
+            {
+                if dataSet.axisDependency == .left
+                {
+                    if dataSet.yMin < _leftAxisMin
+                    {
+                        _leftAxisMin = dataSet.yMin
+                    }
+                    
+                    if dataSet.yMax > _leftAxisMax
+                    {
+                        _leftAxisMax = dataSet.yMax
+                    }
+                }
+            }
+        }
+        
+        // right axis
+        let firstRight = getFirstRight(dataSets: internalDataSets)
+        
+        if firstRight !== nil
+        {
+            _rightAxisMax = firstRight!.yMax
+            _rightAxisMin = firstRight!.yMin
+            
+            for dataSet in internalDataSets
             {
                 if dataSet.axisDependency == .right
                 {
