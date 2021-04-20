@@ -114,6 +114,24 @@ open class ChartDataSet: ChartBaseDataSet
         // only recalculate y
         self[indexFrom...indexTo].forEach(calcMinMaxY)
     }
+
+    open override func containsEntriesAtXValue(fromX: Double, toX: Double) -> Bool
+    {
+        guard !isEmpty else { return false }
+
+        for i in 0 ..< entries.count
+        {
+            var entry = entries[i];
+            var entryX = entry.x;
+
+            if((entryX >= fromX) && (entryX <= toX))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     
     @objc open func calcMinMaxX(entry e: ChartDataEntry)
     {
