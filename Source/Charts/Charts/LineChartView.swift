@@ -15,6 +15,14 @@ import CoreGraphics
 /// Chart that draws lines, surfaces, circles, ...
 open class LineChartView: BarLineChartViewBase, LineChartDataProvider
 {
+
+    @objc open var enableGroupHighlighter = false
+
+    @objc open var isGroupSelectionEnabled: Bool
+    {
+        return enableGroupHighlighter
+    }
+
     internal override func initialize()
     {
         super.initialize()

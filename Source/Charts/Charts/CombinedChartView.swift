@@ -17,6 +17,13 @@ open class CombinedChartView: BarLineChartViewBase, CombinedChartDataProvider
 {
     /// the fill-formatter used for determining the position of the fill-line
     internal var _fillFormatter: IFillFormatter!
+
+    @objc open var enableGroupHighlighter = false
+
+    @objc open var isGroupSelectionEnabled: Bool
+    {
+        return enableGroupHighlighter
+    }
     
     /// enum that allows to specify the order in which the different data objects for the combined-chart are drawn
     @objc(CombinedChartDrawOrder)

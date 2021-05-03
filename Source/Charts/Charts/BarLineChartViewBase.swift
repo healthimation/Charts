@@ -21,6 +21,13 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
     
     /// flag that indicates if auto scaling on the y axis is enabled
     private var _autoScaleMinMaxEnabled = false
+
+    @objc open var enableEnlargementOnHighlight = false
+    @objc open var makeUnhighlightedEntriesSmallerEnabled = false
+    @objc open var enableDimming = false
+    @objc open var dimmingAlpha = 120
+    @objc open var decreaseScaleForUnhighlightedEntry: CGFloat = 0.8
+    @objc open var enlargementScaleForHighlightedEntry: CGFloat = 1.2
     
     private var _pinchZoomEnabled = false
     private var _doubleTapToZoomEnabled = true
@@ -29,6 +36,36 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
     
     private var _scaleXEnabled = true
     private var _scaleYEnabled = true
+
+    @objc open var isEnlargeEntryOnHighlightEnabled: Bool
+    {
+        return enableEnlargementOnHighlight
+    }
+
+    @objc open var isMakeUnhighlightedEntriesSmalledEnabled: Bool
+    {
+        return makeUnhighlightedEntriesSmallerEnabled
+    }
+
+    @objc open var isDimmingEnabled: Bool
+    {
+        return enableDimming
+    }
+
+    @objc open var getEnlargementScaleForHighlightedEntry: CGFloat
+    {
+        return enlargementScaleForHighlightedEntry
+    }
+
+    @objc open var getDecreaseScaleForUnhighlightedEntry: CGFloat
+    {
+        return decreaseScaleForUnhighlightedEntry
+    }
+
+    @objc open var getDimmingAlpha: NSInteger
+    {
+        return dimmingAlpha
+    }
     
     /// the color for the background of the chart-drawing area (everything behind the grid lines).
     @objc open var gridBackgroundColor = NSUIColor(red: 240/255.0, green: 240/255.0, blue: 240/255.0, alpha: 1.0)
@@ -1832,7 +1869,7 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         get { return _autoScaleMinMaxEnabled }
         set { _autoScaleMinMaxEnabled = newValue }
     }
-    
+
     /// **default**: false
     /// `true` if auto scaling on the y axis is enabled.
     @objc open var isAutoScaleMinMaxEnabled : Bool { return autoScaleMinMaxEnabled }
