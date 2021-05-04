@@ -86,14 +86,14 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         }
     }
 
-    private func prepareBuffer(dataSet: IBarChartDataSet, index: Int)
+    private func prepareBuffer(dataSet: IBarChartDataSet, index: Int, scale: CGFloat)
     {
         guard
             let dataProvider = dataProvider,
             let barData = dataProvider.barData
             else { return }
-
-        let barWidthHalf = barData.barWidth / 2.0
+        let barWidth = barData.barWidth * Double(scale)
+        let barWidthHalf = barWidth / 2.0
 
         let buffer = _buffers[index]
         var bufferIndex = 0
@@ -280,6 +280,20 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             let barData = dataProvider.barData
             else { return }
 
+        var hasValuesToHighlight: Bool
+        if let chart = dataProvider as? BarChartView {
+            hasValuesToHighlight = chart.valuesToHighlight()
+        } else { return }
+
+        let isMakeUnhighlightedEntriesSmalledEnabled = dataProvider.isMakeUnhighlightedEntriesSmalledEnabled
+        let isDimmingEnabled = dataProvider.isDimmingEnabled
+
+        let decreaseScale = dataProvider.getDecreaseScaleForUnhighlightedEntry
+        let dimmingAlpha = dataProvider.getDimmingAlpha
+
+        let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(dimmingAlpha / 255) : CGFloat(1.0)
+
         // If we redraw the data, remove and repopulate accessible elements to update label values and frames
         accessibleChartElements.removeAll()
         accessibilityOrderedElements = accessibilityCreateEmptyOrderedElements()
@@ -304,7 +318,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     fatalError("Datasets for BarChartRenderer must conform to IBarChartDataset")
                 }
 
-                drawDataSet(context: context, dataSet: set as! IBarChartDataSet, index: i)
+                drawDataSet(context: context, dataSet: set as! IBarChartDataSet, scale: scale, alpha: alpha)
             }
         }
 
@@ -315,13 +329,17 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
     private var _barShadowRectBuffer: CGRect = CGRect()
 
-    @objc open func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, index: Int)
+    @objc open func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, scale: CGFloat, alpha: CGFloat)
     {
-        guard let dataProvider = dataProvider else { return }
+        guard
+            let dataProvider = dataProvider,
+            let barData = dataProvider.barData
+            else { return }
+        let index = barData.indexOfDataSet(dataSet)
 
         let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
 
-        prepareBuffer(dataSet: dataSet, index: index)
+        prepareBuffer(dataSet: dataSet, index: index, scale: scale)
         trans.rectValuesToPixel(&_buffers[index].rects)
 
         let borderWidth = dataSet.barBorderWidth
@@ -331,6 +349,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         context.saveGState()
 
         // draw the bar shadow before the values
+        // TODO: add support for enlarging and dimming
         if dataProvider.isDrawBarShadowEnabled
         {
             guard let barData = dataProvider.barData else { return }
