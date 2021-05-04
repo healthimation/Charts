@@ -263,16 +263,16 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
             context.clip(to: _viewPortHandler.contentRect)
         }
         renderer.drawData(context: context)
+
+        renderer.drawExtras(context: context)
         
-        // if highlighting is enabled
+        // if highlighting is enabled (actually - if there are values to highlight)
         if (valuesToHighlight())
         {
             renderer.drawHighlighted(context: context, indices: _indicesToHighlight)
         }
         
         context.restoreGState()
-        
-        renderer.drawExtras(context: context)
         
         if _xAxis.isEnabled && !_xAxis.isDrawLimitLinesBehindDataEnabled
         {
