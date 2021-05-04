@@ -342,16 +342,11 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         prepareBuffer(dataSet: dataSet, index: index, scale: scale)
         trans.rectValuesToPixel(&_buffers[index].rects)
 
-        let borderWidth = dataSet.barBorderWidth
-        let borderColor = dataSet.barBorderColor
-        let drawBorder = borderWidth > 0.0
-
         context.saveGState()
 
         // draw the bar shadow before the values
         // TODO: add support for enlarging and dimming
-        if dataProvider.isDrawBarShadowEnabled
-        {
+        if dataProvider.isDrawBarShadowEnabled {
             guard let barData = dataProvider.barData else { return }
 
             let barWidth = barData.barWidth
@@ -390,8 +385,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let buffer = _buffers[index]
 
         // draw the bar shadow before the values
-        if dataProvider.isDrawBarShadowEnabled
-        {
+        if dataProvider.isDrawBarShadowEnabled {
             for j in stride(from: 0, to: buffer.rects.count, by: 1)
             {
                 let barRect = buffer.rects[j]
@@ -411,6 +405,23 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             }
         }
 
+        drawBarBufferContent(context: context, dataSet: dataSet, scale: scale, alpha: alpha, buffer: buffer.rects)
+
+        context.restoreGState()
+    }
+
+    @objc open func drawBarBufferContent(context: CGContext, dataSet: IBarChartDataSet, scale: CGFloat, alpha: CGFloat, buffer: [CGRect]) {
+
+        guard
+            let dataProvider = dataProvider,
+            let barData = dataProvider.barData
+            else { return }
+        let dataSetIndex = barData.indexOfDataSet(dataSet)
+
+        let borderWidth = dataSet.barBorderWidth
+        let borderColor = dataSet.barBorderColor
+        let drawBorder = borderWidth > 0.0
+
         let isSingleColor = dataSet.colors.count == 1
 
         if isSingleColor
@@ -422,9 +433,9 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
 
-        for j in stride(from: 0, to: buffer.rects.count, by: 1)
+        for j in stride(from: 0, to: buffer.count, by: 1)
         {
-            let barRect = buffer.rects[j]
+            let barRect = buffer[j]
 
             if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
             {
@@ -457,7 +468,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 let element = createAccessibleElement(withIndex: j,
                                                       container: chart,
                                                       dataSet: dataSet,
-                                                      dataSetIndex: index,
+                                                      dataSetIndex: dataSetIndex,
                                                       stackSize: stackSize)
                 { (element) in
                     element.accessibilityFrame = barRect
@@ -466,8 +477,6 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 accessibilityOrderedElements[j/stackSize].append(element)
             }
         }
-
-        context.restoreGState()
     }
 
     open func prepareBarHighlight(
