@@ -86,8 +86,13 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         }
     }
 
-    private func prepareBuffer(dataSet: IBarChartDataSet, index: Int, scale: CGFloat)
-    {
+    private func getBufferByEntryIndex(buffer: Buffer, index: Int, stackSize: Int) -> [CGRect] {
+        let startIndex = index * stackSize
+        let endIndex = startIndex + stackSize
+        return Array(buffer.rects[startIndex..<endIndex])
+    }
+
+    private func prepareBuffer(dataSet: IBarChartDataSet, index: Int, scale: CGFloat) {
         guard
             let dataProvider = dataProvider,
             let barData = dataProvider.barData
@@ -329,8 +334,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
     private var _barShadowRectBuffer: CGRect = CGRect()
 
-    @objc open func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, scale: CGFloat, alpha: CGFloat)
-    {
+    @objc open func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, scale: CGFloat, alpha: CGFloat) {
         guard
             let dataProvider = dataProvider,
             let barData = dataProvider.barData
@@ -782,6 +786,12 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
         var barRect = CGRect()
 
+        let isEnlargeEntryOnHighlightEnabled = dataProvider.isEnlargeEntryOnHighlightEnabled
+        let enlargementScale = dataProvider.getEnlargementScaleForHighlightedEntry
+
+        let scale = isEnlargeEntryOnHighlightEnabled ? enlargementScale : CGFloat(1.0)
+        let alpha = CGFloat(255/255)
+
         for high in indices
         {
             guard
@@ -824,7 +834,19 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     y2 = 0.0
                 }
 
-                prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth / 2.0, trans: trans, rect: &barRect)
+                let dataSetIndex = barData.indexOfDataSet(set)
+                let entryIndex = set.entryIndex(entry: e)
+
+                prepareBuffer(dataSet: set, index: dataSetIndex, scale: scale)
+
+                let stackSize = set.isStacked ? set.stackSize : 1
+                var finalBuffer = getBufferByEntryIndex(buffer: _buffers[dataSetIndex], index: entryIndex, stackSize: stackSize)
+                
+                trans.rectValuesToPixel(&finalBuffer)
+                drawBarBufferContent(context: context, dataSet: set, scale: scale, alpha: alpha, buffer: finalBuffer)
+
+                // TODO: review this line - needed? can we get rid of it?
+                prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth * Double(scale) / 2.0, trans: trans, rect: &barRect)
 
                 if(set.highlightLineWidth > 0.0) {
                     let x = high.x // get the x-position
@@ -833,14 +855,8 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     let pt = trans.pixelForValues(x: x, y: y)
 
                     high.setDraw(pt: pt)
-                    drawHighlightLines(context: context, point: pt, set: set, barRect: barRect)
+                    drawHighlightLine(context: context, point: pt, set: set, barRect: barRect)
                 }
-
-                context.setFillColor(set.highlightColor.cgColor)
-                context.setAlpha(set.highlightAlpha)
-
-                setHighlightDrawPos(highlight: high, barRect: barRect)
-                context.fill(barRect)
             }
         }
 
@@ -929,7 +945,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         return element
     }
 
-    @objc open func drawHighlightLines(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
+    @objc open func drawHighlightLine(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
     {
         context.beginPath()
         context.setLineWidth(set.highlightLineWidth)
