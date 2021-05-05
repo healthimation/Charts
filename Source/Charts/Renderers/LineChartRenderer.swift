@@ -48,7 +48,7 @@ open class LineChartRenderer: LineRadarRenderer
         let dimmingAlpha = dataProvider.getDimmingAlpha
 
         let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
-        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(dimmingAlpha / 255) : CGFloat(1.0)
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
 
         for i in 0 ..< lineData.dataSetCount
         {
@@ -384,7 +384,7 @@ open class LineChartRenderer: LineRadarRenderer
             
             // get the color that is set for this line-segment
             context.setStrokeColor(dataSet.color(atIndex: j).cgColor)
-            // context.setAlpha(alpha)
+            context.setAlpha(alpha)
             context.strokeLineSegments(between: _lineSegments)
         }
         
@@ -574,7 +574,8 @@ open class LineChartRenderer: LineRadarRenderer
         let dimmingAlpha = dataProvider.getDimmingAlpha
 
         let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
-        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(dimmingAlpha / 255) : CGFloat(1.0)
+        // TODO: alpha type should be reviewed?
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
 
         for set in dataSets {
             drawEntries(context: context, dataSet: set as! ILineChartDataSet, scale: scale, alpha: alpha)
@@ -670,8 +671,8 @@ open class LineChartRenderer: LineRadarRenderer
             }
 
             let circleColor = dataSet.getCircleColor(atIndex: j)!.cgColor;
-            // context.setFillColor(circleColor.copy(alpha: alpha) ?? circleColor)
             context.setFillColor(circleColor)
+            context.setAlpha(alpha)
 
             rect.origin.x = pt.x - circleRadius
             rect.origin.y = pt.y - circleRadius
@@ -706,8 +707,8 @@ open class LineChartRenderer: LineRadarRenderer
                 if drawCircleHole
                 {
                     var holeColor = dataSet.getCircleHoleColor(atIndex: j)!.cgColor;
-                    // context.setFillColor(holeColor.copy(alpha: alpha) ?? holeColor)
                     context.setFillColor(holeColor)
+                    context.setAlpha(alpha)
                     
                     // The hole rect
                     rect.origin.x = pt.x - circleHoleRadius

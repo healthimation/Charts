@@ -297,7 +297,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let dimmingAlpha = dataProvider.getDimmingAlpha
 
         let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
-        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(dimmingAlpha / 255) : CGFloat(1.0)
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
 
         // If we redraw the data, remove and repopulate accessible elements to update label values and frames
         accessibleChartElements.removeAll()
@@ -431,6 +431,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         if isSingleColor
         {
             context.setFillColor(dataSet.color(atIndex: 0).cgColor)
+            context.setAlpha(alpha)
         }
 
         // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
@@ -455,6 +456,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             {
                 // Set the color for the currently drawn value. If the index is out of bounds, reuse colors.
                 context.setFillColor(dataSet.color(atIndex: j).cgColor)
+                context.setAlpha(alpha)
             }
 
             context.fill(barRect)
