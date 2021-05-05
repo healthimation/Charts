@@ -23,6 +23,8 @@ open class DataRenderer: Renderer
     /// Renderers should ensure that the order of elements makes sense to a client presenting an audio-only interface to a user.
     /// Subclasses should populate this array in drawData() or drawDataSet() to make the chart accessible.
     @objc final var accessibleChartElements: [NSUIAccessibilityElement] = []
+    
+    @objc public var accessibleChartLabel = "Chart"
 
     @objc public let animator: Animator
     
@@ -86,7 +88,7 @@ open class DataRenderer: Renderer
         let
         element = NSUIAccessibilityElement(accessibilityContainer: chart)
         //add bridge for chart type
-        element.accessibilityLabel = "Chart"
+        element.accessibilityLabel = accessibleChartLabel
         element.accessibilityFrame = chart.bounds
 
         return element
