@@ -13,9 +13,11 @@ import Foundation
 import CoreGraphics
 
 @objc
-public protocol LineChartDataProvider: BarLineScatterCandleBubbleChartDataProvider
+public protocol LineChartDataProvider: BarLineChartInterface
 {
     var lineData: LineChartData? { get }
+
+    var isGroupSelectionEnabled: Bool {get}
     
     func getAxis(_ axis: YAxis.AxisDependency) -> YAxis
 }

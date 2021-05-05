@@ -174,9 +174,13 @@ open class HorizontalBarChartRenderer: BarChartRenderer
     
     private var _barShadowRectBuffer: CGRect = CGRect()
     
-    open override func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, index: Int)
+    open override func drawDataSet(context: CGContext, dataSet: IBarChartDataSet, scale: CGFloat, alpha: CGFloat)
     {
-        guard let dataProvider = dataProvider else { return }
+        guard
+            let dataProvider = dataProvider,
+            let barData = dataProvider.barData
+            else { return }
+        let index = barData.indexOfDataSet(dataSet)
         
         let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
         

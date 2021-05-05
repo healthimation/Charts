@@ -16,7 +16,7 @@ open class LineChartRenderer: LineRadarRenderer
 {
     // TODO: Currently, this nesting isn't necessary for LineCharts. However, it will make it much easier to add a custom rotor
     // that navigates between datasets.
-    // NOTE: Unlike the other renderers, LineChartRenderer populates accessibleChartElements in drawCircles due to the nature of its drawing options.
+    // NOTE: Unlike the other renderers, LineChartRenderer populates accessibleChartElements in drawEntries due to the nature of its drawing options.
     /// A nested array of elements ordered logically (i.e not in visual/drawing order) for use with VoiceOver.
     private lazy var accessibilityOrderedElements: [[NSUIAccessibilityElement]] = accessibilityCreateEmptyOrderedElements()
 
@@ -31,8 +31,25 @@ open class LineChartRenderer: LineRadarRenderer
     
     open override func drawData(context: CGContext)
     {
-        guard let lineData = dataProvider?.lineData else { return }
+        guard
+            let dataProvider = dataProvider,
+            let lineData = dataProvider.lineData
+            else { return }
+
+        var hasValuesToHighlight: Bool
+        if let chart = dataProvider as? LineChartView {
+            hasValuesToHighlight = chart.valuesToHighlight()
+        } else { return }
         
+        let isMakeUnhighlightedEntriesSmalledEnabled = dataProvider.isMakeUnhighlightedEntriesSmalledEnabled
+        let isDimmingEnabled = dataProvider.isDimmingEnabled
+
+        let decreaseScale = dataProvider.getDecreaseScaleForUnhighlightedEntry
+        let dimmingAlpha = dataProvider.getDimmingAlpha
+
+        let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
+
         for i in 0 ..< lineData.dataSetCount
         {
             guard let set = lineData.getDataSetByIndex(i) else { continue }
@@ -44,12 +61,12 @@ open class LineChartRenderer: LineRadarRenderer
                     fatalError("Datasets for LineChartRenderer must conform to ILineChartDataSet")
                 }
                 
-                drawDataSet(context: context, dataSet: set as! ILineChartDataSet)
+                drawChartLines(context: context, dataSet: set as! ILineChartDataSet, scale: scale, alpha: alpha)
             }
         }
     }
     
-    @objc open func drawDataSet(context: CGContext, dataSet: ILineChartDataSet)
+    @objc open func drawChartLines(context: CGContext, dataSet: ILineChartDataSet, scale: CGFloat, alpha: CGFloat)
     {
         if dataSet.entryCount < 1
         {
@@ -58,7 +75,7 @@ open class LineChartRenderer: LineRadarRenderer
         
         context.saveGState()
         
-        context.setLineWidth(dataSet.lineWidth)
+        context.setLineWidth(dataSet.lineWidth * scale)
         if dataSet.lineDashLengths != nil
         {
             context.setLineDash(phase: dataSet.lineDashPhase, lengths: dataSet.lineDashLengths!)
@@ -75,7 +92,7 @@ open class LineChartRenderer: LineRadarRenderer
         {
         case .linear: fallthrough
         case .stepped:
-            drawLinear(context: context, dataSet: dataSet)
+            drawLinear(context: context, dataSet: dataSet, alpha: alpha)
             
         case .cubicBezier:
             drawCubicBezier(context: context, dataSet: dataSet)
@@ -287,7 +304,7 @@ open class LineChartRenderer: LineRadarRenderer
     
     private var _lineSegments = [CGPoint](repeating: CGPoint(), count: 2)
     
-    @objc open func drawLinear(context: CGContext, dataSet: ILineChartDataSet)
+    @objc open func drawLinear(context: CGContext, dataSet: ILineChartDataSet, alpha: CGFloat)
     {
         guard let dataProvider = dataProvider else { return }
         
@@ -367,6 +384,7 @@ open class LineChartRenderer: LineRadarRenderer
             
             // get the color that is set for this line-segment
             context.setStrokeColor(dataSet.color(atIndex: j).cgColor)
+            context.setAlpha(alpha)
             context.strokeLineSegments(between: _lineSegments)
         }
         
@@ -525,23 +543,18 @@ open class LineChartRenderer: LineRadarRenderer
     
     open override func drawExtras(context: CGContext)
     {
-        drawCircles(context: context)
-    }
-    
-    private func drawCircles(context: CGContext)
-    {
         guard
             let dataProvider = dataProvider,
             let lineData = dataProvider.lineData
             else { return }
         
-        let phaseY = animator.phaseY
-
         let dataSets = lineData.dataSets
-        
-        var pt = CGPoint()
-        var rect = CGRect()
-        
+
+        var hasValuesToHighlight: Bool
+        if let chart = dataProvider as? LineChartView {
+            hasValuesToHighlight = chart.valuesToHighlight()
+        } else { return }
+
         // If we redraw the data, remove and repopulate accessible elements to update label values and frames
         accessibleChartElements.removeAll()
         accessibilityOrderedElements = accessibilityCreateEmptyOrderedElements()
@@ -553,140 +566,167 @@ open class LineChartRenderer: LineRadarRenderer
                                                  withDefaultDescription: "Line Chart")
             accessibleChartElements.append(element)
         }
+        // -------------------------------------
+        let isMakeUnhighlightedEntriesSmalledEnabled = dataProvider.isMakeUnhighlightedEntriesSmalledEnabled
+        let isDimmingEnabled = dataProvider.isDimmingEnabled
+
+        let decreaseScale = dataProvider.getDecreaseScaleForUnhighlightedEntry
+        let dimmingAlpha = dataProvider.getDimmingAlpha
+
+        let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
+        // TODO: alpha type should be reviewed?
+        let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
+
+        for set in dataSets {
+            drawEntries(context: context, dataSet: set as! ILineChartDataSet, scale: scale, alpha: alpha)
+        }
+
+        // Merge nested ordered arrays into the single accessibleChartElements.
+        accessibleChartElements.append(contentsOf: accessibilityOrderedElements.flatMap { $0 } )
+        accessibilityPostLayoutChangedNotification()
+    }
+    
+    private func drawEntries(context: CGContext, dataSet: ILineChartDataSet, scale: CGFloat, alpha: CGFloat) {
+        guard
+            let dataProvider = dataProvider,
+            let lineData = dataProvider.lineData
+            else { return }
+        
+        let phaseY = animator.phaseY
+        
+        var pt = CGPoint()
+        var rect = CGRect()
 
         context.saveGState()
 
-        for i in 0 ..< dataSets.count
+        if !dataSet.isVisible || dataSet.entryCount == 0
         {
-            guard let dataSet = lineData.getDataSetByIndex(i) as? ILineChartDataSet else { continue }
+            return
+        }
+        
+        let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
+        let valueToPixelMatrix = trans.valueToPixelMatrix
+        
+        _xBounds.set(chart: dataProvider, dataSet: dataSet, animator: animator)
+        
+        let circleRadius = dataSet.circleRadius * scale
+        let circleDiameter = circleRadius * 2.0
+        let circleHoleRadius = dataSet.circleHoleRadius * scale
+        let circleHoleDiameter = circleHoleRadius * 2.0
+        
+        let drawCircleHole = dataSet.isDrawCircleHoleEnabled &&
+            circleHoleRadius < circleRadius &&
+            circleHoleRadius > 0.0
             
-            if !dataSet.isVisible || dataSet.entryCount == 0
+        let drawTransparentCircleHole = drawCircleHole &&
+            (dataSet.getCircleHoleColor(atIndex: 0) == nil ||
+                dataSet.getCircleHoleColor(atIndex: 0) == NSUIColor.clear)
+
+        let drawCirclesAsRectangles = dataSet.drawCirclesAsRectangles
+        
+        for j in _xBounds
+        {
+            guard let e = dataSet.entryForIndex(j) else { break }
+
+            pt.x = CGFloat(e.x)
+            pt.y = CGFloat(e.y * phaseY)
+            pt = pt.applying(valueToPixelMatrix)
+            
+            if (!viewPortHandler.isInBoundsRight(pt.x))
+            {
+                break
+            }
+            
+            // make sure the circles don't do shitty things outside bounds
+            if (!viewPortHandler.isInBoundsLeft(pt.x) || !viewPortHandler.isInBoundsY(pt.y))
             {
                 continue
             }
             
-            let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
-            let valueToPixelMatrix = trans.valueToPixelMatrix
-            
-            _xBounds.set(chart: dataProvider, dataSet: dataSet, animator: animator)
-            
-            let circleRadius = dataSet.circleRadius
-            let circleDiameter = circleRadius * 2.0
-            let circleHoleRadius = dataSet.circleHoleRadius
-            let circleHoleDiameter = circleHoleRadius * 2.0
-            
-            let drawCircleHole = dataSet.isDrawCircleHoleEnabled &&
-                circleHoleRadius < circleRadius &&
-                circleHoleRadius > 0.0
-                
-            let drawTransparentCircleHole = drawCircleHole &&
-                (dataSet.getCircleHoleColor(atIndex: 0) == nil ||
-                    dataSet.getCircleHoleColor(atIndex: 0) == NSUIColor.clear)
+            // Accessibility element geometry
+            let scaleFactor: CGFloat = 3
+            let accessibilityRect = CGRect(x: pt.x - (scaleFactor * circleRadius),
+                                            y: pt.y - (scaleFactor * circleRadius),
+                                            width: scaleFactor * circleDiameter,
+                                            height: scaleFactor * circleDiameter)
+            // Create and append the corresponding accessibility element to accessibilityOrderedElements
+            let indexOfDataSet = lineData.indexOfDataSet(dataSet)
 
-            let drawCirclesAsRectangles = dataSet.drawCirclesAsRectangles
-            
-            for j in _xBounds
+            if let chart = dataProvider as? LineChartView
             {
-                guard let e = dataSet.entryForIndex(j) else { break }
+                let element = createAccessibleElement(withIndex: j,
+                                                        container: chart,
+                                                        dataSet: dataSet,
+                                                        dataSetIndex: indexOfDataSet)
+                { (element) in
+                    element.accessibilityFrame = accessibilityRect
+                }
 
-                pt.x = CGFloat(e.x)
-                pt.y = CGFloat(e.y * phaseY)
-                pt = pt.applying(valueToPixelMatrix)
+                accessibilityOrderedElements[indexOfDataSet].append(element)
+            }
+
+            if !dataSet.isDrawCirclesEnabled
+            {
+                continue
+            }
+
+            let circleColor = dataSet.getCircleColor(atIndex: j)!.cgColor;
+            context.setFillColor(circleColor)
+            context.setAlpha(alpha)
+
+            rect.origin.x = pt.x - circleRadius
+            rect.origin.y = pt.y - circleRadius
+            rect.size.width = circleDiameter
+            rect.size.height = circleDiameter
+
+            if drawTransparentCircleHole
+            {
+                // Begin path for circle with hole
+                context.beginPath()
+                context.addEllipse(in: rect)
                 
-                if (!viewPortHandler.isInBoundsRight(pt.x))
-                {
-                    break
+                // Cut hole in path
+                rect.origin.x = pt.x - circleHoleRadius
+                rect.origin.y = pt.y - circleHoleRadius
+                rect.size.width = circleHoleDiameter
+                rect.size.height = circleHoleDiameter
+                context.addEllipse(in: rect)
+                
+                // Fill in-between
+                context.fillPath(using: .evenOdd)
+            }
+            else
+            {
+                if drawCirclesAsRectangles {
+                    context.fill(rect)
+                }
+                else{ 
+                    context.fillEllipse(in: rect)
                 }
                 
-                // make sure the circles don't do shitty things outside bounds
-                if (!viewPortHandler.isInBoundsLeft(pt.x) || !viewPortHandler.isInBoundsY(pt.y))
+                if drawCircleHole
                 {
-                    continue
-                }
-                
-                // Accessibility element geometry
-                let scaleFactor: CGFloat = 3
-                let accessibilityRect = CGRect(x: pt.x - (scaleFactor * circleRadius),
-                                               y: pt.y - (scaleFactor * circleRadius),
-                                               width: scaleFactor * circleDiameter,
-                                               height: scaleFactor * circleDiameter)
-                // Create and append the corresponding accessibility element to accessibilityOrderedElements
-                if let chart = dataProvider as? LineChartView
-                {
-                    let element = createAccessibleElement(withIndex: j,
-                                                          container: chart,
-                                                          dataSet: dataSet,
-                                                          dataSetIndex: i)
-                    { (element) in
-                        element.accessibilityFrame = accessibilityRect
-                    }
-
-                    accessibilityOrderedElements[i].append(element)
-                }
-
-                if !dataSet.isDrawCirclesEnabled
-                {
-                    continue
-                }
-
-                context.setFillColor(dataSet.getCircleColor(atIndex: j)!.cgColor)
-
-                rect.origin.x = pt.x - circleRadius
-                rect.origin.y = pt.y - circleRadius
-                rect.size.width = circleDiameter
-                rect.size.height = circleDiameter
-
-                if drawTransparentCircleHole
-                {
-                    // Begin path for circle with hole
-                    context.beginPath()
-                    context.addEllipse(in: rect)
+                    var holeColor = dataSet.getCircleHoleColor(atIndex: j)!.cgColor;
+                    context.setFillColor(holeColor)
+                    context.setAlpha(alpha)
                     
-                    // Cut hole in path
+                    // The hole rect
                     rect.origin.x = pt.x - circleHoleRadius
                     rect.origin.y = pt.y - circleHoleRadius
                     rect.size.width = circleHoleDiameter
                     rect.size.height = circleHoleDiameter
-                    context.addEllipse(in: rect)
                     
-                    // Fill in-between
-                    context.fillPath(using: .evenOdd)
-                }
-                else
-                {
                     if drawCirclesAsRectangles {
                         context.fill(rect)
                     }
                     else{ 
                         context.fillEllipse(in: rect)
                     }
-                    
-                    if drawCircleHole
-                    {
-                        context.setFillColor(dataSet.getCircleHoleColor(atIndex: j)!.cgColor)
-                     
-                        // The hole rect
-                        rect.origin.x = pt.x - circleHoleRadius
-                        rect.origin.y = pt.y - circleHoleRadius
-                        rect.size.width = circleHoleDiameter
-                        rect.size.height = circleHoleDiameter
-                        
-                        if drawCirclesAsRectangles {
-                            context.fill(rect)
-                        }
-                        else{ 
-                            context.fillEllipse(in: rect)
-                        }
-                    }
                 }
             }
         }
         
         context.restoreGState()
-
-        // Merge nested ordered arrays into the single accessibleChartElements.
-        accessibleChartElements.append(contentsOf: accessibilityOrderedElements.flatMap { $0 } )
-        accessibilityPostLayoutChangedNotification()
     }
     
     open override func drawHighlighted(context: CGContext, indices: [Highlight])
@@ -695,51 +735,88 @@ open class LineChartRenderer: LineRadarRenderer
             let dataProvider = dataProvider,
             let lineData = dataProvider.lineData
             else { return }
-        
-        let chartXMax = dataProvider.chartXMax
-        
+
+        let isEnlargeEntryOnHighlightEnabled = dataProvider.isEnlargeEntryOnHighlightEnabled
+        let isGroupSelectionEnabled = dataProvider.isGroupSelectionEnabled
+        let enlargementScale = dataProvider.getEnlargementScaleForHighlightedEntry
+
+        let scale = isEnlargeEntryOnHighlightEnabled ? enlargementScale : CGFloat(1.0)
+        let alpha = CGFloat(255/255)
+
         context.saveGState()
-        
-        for high in indices
-        {
-            guard let set = lineData.getDataSetByIndex(high.dataSetIndex) as? ILineChartDataSet
-                , set.isHighlightEnabled
-                else { continue }
-            
-            guard let e = set.entryForXValue(high.x, closestToY: high.y) else { continue }
-            
-            if !isInBoundsX(entry: e, dataSet: set)
-            {
-                continue
+
+        if(isGroupSelectionEnabled) {
+            for high in indices {
+                let dataSets = lineData.dataSets
+                var dataSetsWithDataBetween: [ILineChartDataSet] = []
+
+                for set in dataSets {
+                    if(set.containsEntriesAtXValue(fromX: high.x, toX: high.x)) {
+                        dataSetsWithDataBetween.append(set as! ILineChartDataSet)
+                    }
+                }
+
+                for set in dataSetsWithDataBetween {
+                    if (!set.isHighlightEnabled) { continue }
+                    drawChartLines(context: context, dataSet: set, scale: scale, alpha: alpha)
+                }
+
+                for set in dataSetsWithDataBetween {
+                    if (!set.isHighlightEnabled) { continue }
+                    drawEntries(context: context, dataSet: set, scale: scale, alpha: alpha)
+                }
             }
-        
-            context.setStrokeColor(set.highlightColor.cgColor)
-            context.setLineWidth(set.highlightLineWidth)
-            if set.highlightLineDashLengths != nil
+        } else {
+            for high in indices
             {
-                context.setLineDash(phase: set.highlightLineDashPhase, lengths: set.highlightLineDashLengths!)
+                guard let set = lineData.getDataSetByIndex(high.dataSetIndex) as? ILineChartDataSet
+                    , set.isHighlightEnabled
+                    else { continue }
+                
+                guard let e = set.entryForXValue(high.x, closestToY: high.y) else { continue }
+                
+                if !isInBoundsX(entry: e, dataSet: set)
+                {
+                    continue
+                }
+
+                var rect = CGRect()
+                let indexInDataSet = set.entryIndex(entry: e)
+            
+                let circleRadius = set.circleRadius * scale
+                let circleDiameter = circleRadius * 2.0
+                let circleHoleRadius = set.circleHoleRadius * scale
+                let circleHoleDiameter = circleHoleRadius * 2.0
+
+                let drawCircleHole = set.isDrawCircleHoleEnabled &&
+                                        circleHoleRadius < circleRadius &&
+                                        circleHoleRadius > 0.0
+                
+                let trans = dataProvider.getTransformer(forAxis: set.axisDependency)
+                
+                let pt = trans.pixelForValues(x: high.x, y: high.y * Double(animator.phaseY))
+
+                context.setFillColor(set.getCircleColor(atIndex: indexInDataSet)!.cgColor)
+
+                rect.origin.x = pt.x - circleRadius
+                rect.origin.y = pt.y - circleRadius
+                rect.size.width = circleDiameter
+                rect.size.height = circleDiameter
+
+                context.fillEllipse(in: rect)
+                if(drawCircleHole) {
+
+                    context.setFillColor(set.getCircleHoleColor(atIndex: indexInDataSet)!.cgColor)
+                    
+                    // The hole rect
+                    rect.origin.x = pt.x - circleHoleRadius
+                    rect.origin.y = pt.y - circleHoleRadius
+                    rect.size.width = circleHoleDiameter
+                    rect.size.height = circleHoleDiameter
+
+                    context.fillEllipse(in: rect)
+                }
             }
-            else
-            {
-                context.setLineDash(phase: 0.0, lengths: [])
-            }
-            
-            let x = high.x // get the x-position
-            let y = high.y * Double(animator.phaseY)
-            
-            if x > chartXMax * animator.phaseX
-            {
-                continue
-            }
-            
-            let trans = dataProvider.getTransformer(forAxis: set.axisDependency)
-            
-            let pt = trans.pixelForValues(x: x, y: y)
-            
-            high.setDraw(pt: pt)
-            
-            // draw the lines
-            drawHighlightLines(context: context, point: pt, set: set)
         }
         
         context.restoreGState()
