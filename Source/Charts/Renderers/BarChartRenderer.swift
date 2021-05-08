@@ -857,7 +857,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     let pt = trans.pixelForValues(x: x, y: y)
 
                     high.setDraw(pt: pt)
-                    drawHighlightLine(context: context, point: pt, set: set, barRect: barRect)
+                    drawHighlightArrow(context: context, point: pt, set: set, insetBottom: CGFloat(2))
                 }
             }
         }
@@ -945,17 +945,5 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         modifier(element)
 
         return element
-    }
-
-    @objc open func drawHighlightLine(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
-    {
-        context.beginPath()
-        context.setLineWidth(set.highlightLineWidth)
-        context.setStrokeColor(set.highlightLineColor.cgColor)
-        context.setAlpha(set.highlightLineAlpha)
-        context.move(to: CGPoint(x: point.x, y: viewPortHandler.contentTop))
-        context.addLine(to: CGPoint(x: point.x, y: barRect.origin.y - set.highlightLineBottomMargin))
-        context.strokePath()
-
     }
 }
