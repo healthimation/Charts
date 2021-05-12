@@ -86,6 +86,55 @@ open class BarLineScatterCandleBubbleRenderer: DataRenderer
             range = Int(Double(self.max - self.min) * phaseX)
         }
     }
+
+    // WARNING: tested only with linecharts / bar charts
+    // Probably need some efforts to be able to work on other charts  
+    internal func drawHighlightArrow(context: CGContext, point: CGPoint, set: IBarLineScatterCandleBubbleChartDataSet, insetBottom: CGFloat) {
+        
+        let strokeWidth = set.highlightLineWidth;
+        let color = set.highlightColor.cgColor;
+        let number = 2.0;
+        let basicHeight = (CGFloat) (Double(strokeWidth)/number.squareRoot());
+        let x = point.x;
+        let y = point.y;
+
+        let topPointOfArrowHead = viewPortHandler.contentTop;
+        let bottomPointOfArrow = y - insetBottom;
+        let topPointOfArrow = topPointOfArrowHead + basicHeight;
+        
+
+        let arrowHeadHeight = CGFloat(4.0) * basicHeight;
+        let arrowHeadHalfWidth = CGFloat(3.0) * basicHeight;
+
+        let baseSpace = CGColorSpaceCreateDeviceRGB()
+        let colors = [color, UIColor.clear.cgColor] as CFArray
+        let locations = [CGFloat(0.6), CGFloat(1.0)]
+        let gradient = CGGradient(colorsSpace: baseSpace, colors: colors, locations: locations)!
+
+        // ACTUALLY DRAWING THE ARROW
+        context.setStrokeColor(color)
+        context.setLineWidth(strokeWidth)
+
+        context.saveGState()
+        context.beginPath()
+
+        context.move(to: CGPoint(x: x, y: topPointOfArrow))
+        context.addLine(to: CGPoint(x: x, y: bottomPointOfArrow))
+        // context.strokePath()
+        context.replacePathWithStrokedPath()
+        context.clip()
+
+        context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: topPointOfArrow), end: CGPoint(x: 0, y: bottomPointOfArrow), options: [])
+        context.restoreGState()
+        // ----------------------------------------------------------------
+        context.beginPath()
+
+        context.move(to: CGPoint(x: x - arrowHeadHalfWidth, y: topPointOfArrowHead + arrowHeadHeight))
+        context.addLine(to: CGPoint(x: x + basicHeight/2, y: topPointOfArrowHead + basicHeight/2))
+        context.move(to: CGPoint(x: x - basicHeight/2, y: topPointOfArrowHead + basicHeight/2))
+        context.addLine(to: CGPoint(x: x + arrowHeadHalfWidth, y: topPointOfArrowHead + arrowHeadHeight))
+        context.strokePath()
+    }
 }
 
 extension BarLineScatterCandleBubbleRenderer.XBounds: RangeExpression {
