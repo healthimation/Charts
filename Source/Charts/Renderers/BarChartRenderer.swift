@@ -52,6 +52,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
     // [CGRect] per dataset
     private var _buffers = [Buffer]()
+    private var _roundedTopCorners: UIRectCorner = [.topLeft, .topRight]
 
     open override func initBuffers()
     {
@@ -437,9 +438,21 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
+        let cornerRadius = dataSet.cornerRadius
+        let drawRoundedCorners = dataSet.drawRoundedCorners
+        var stackIndexCount = 1
+        var isTopRect = false
 
         for j in stride(from: 0, to: buffer.count, by: 1)
         {
+            isTopRect = false
+            if(stackIndexCount < stackSize) {
+                stackIndexCount += 1;
+            } else {
+                isTopRect = true;
+                stackIndexCount = 1;
+            }
+
             let barRect = buffer[j]
 
             if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
@@ -459,13 +472,24 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 context.setAlpha(alpha)
             }
 
+            let roundedCorners = drawRoundedCorners && isTopRect ? _roundedTopCorners : []
+            let path = UIBezierPath(roundedRect: barRect, byRoundingCorners: roundedCorners,
+                                    cornerRadii: CGSize(width: cornerRadius, height: cornerRadius))
+
+            context.saveGState()
+
+            context.addPath(path.cgPath)
+            context.clip()
             context.fill(barRect)
+
+            context.restoreGState()
 
             if drawBorder
             {
                 context.setStrokeColor(borderColor.cgColor)
                 context.setLineWidth(borderWidth)
-                context.stroke(barRect)
+                context.addPath(path.cgPath)
+                context.strokePath()
             }
 
             // Create and append the corresponding accessibility element to accessibilityOrderedElements
