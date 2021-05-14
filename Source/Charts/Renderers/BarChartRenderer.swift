@@ -52,6 +52,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
     // [CGRect] per dataset
     private var _buffers = [Buffer]()
+    private var _roundedTopCorners: UIRectCorner = [.topLeft, .topRight]
 
     open override func initBuffers()
     {
@@ -437,9 +438,31 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
+        let cornerRadius = dataSet.cornerRadius
+        let drawRoundedCorners = cornerRadius > 0.0
+
+        // -------- WARNING ----------
+        // @stackIndexCount is used here to allow easier detection of top rectangles (to make it rounded at the top).
+        // This way of doing the feature assumes that a dataset have constant stack size for each bar (like 3, 3, 3).
+        // The library allow a dataSet to contain different stack sizes (like 3, 1 ,2 ...), and the method getStackSize is
+        //  **** Returns the _MAXIMUM_ number of bars that can be stacked upon another in this DataSet ****
+
+        // So keep that in mind and if we ever need non constant stack size inside one dataSet, we will need to review
+        // the appropriate approach here
+        var stackIndexCount = 1
+        var isTopRect = false
 
         for j in stride(from: 0, to: buffer.count, by: 1)
         {
+            // helps to find the top bar
+            isTopRect = false
+            if(stackIndexCount < stackSize) {
+                stackIndexCount += 1;
+            } else {
+                isTopRect = true;
+                stackIndexCount = 1;
+            }
+
             let barRect = buffer[j]
 
             if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
@@ -459,13 +482,24 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 context.setAlpha(alpha)
             }
 
+            let roundedCorners = drawRoundedCorners && isTopRect ? _roundedTopCorners : []
+            let path = UIBezierPath(roundedRect: barRect, byRoundingCorners: roundedCorners,
+                                    cornerRadii: CGSize(width: cornerRadius, height: cornerRadius))
+
+            context.saveGState()
+
+            context.addPath(path.cgPath)
+            context.clip()
             context.fill(barRect)
+
+            context.restoreGState()
 
             if drawBorder
             {
                 context.setStrokeColor(borderColor.cgColor)
                 context.setLineWidth(borderWidth)
-                context.stroke(barRect)
+                context.addPath(path.cgPath)
+                context.strokePath()
             }
 
             // Create and append the corresponding accessibility element to accessibilityOrderedElements
@@ -857,7 +891,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     let pt = trans.pixelForValues(x: x, y: y)
 
                     high.setDraw(pt: pt)
-                    drawHighlightLine(context: context, point: pt, set: set, barRect: barRect)
+                    drawHighlightArrow(context: context, point: pt, set: set, insetBottom: CGFloat(2))
                 }
             }
         }
@@ -945,17 +979,5 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         modifier(element)
 
         return element
-    }
-
-    @objc open func drawHighlightLine(context: CGContext, point: CGPoint, set: IBarChartDataSet, barRect: CGRect)
-    {
-        context.beginPath()
-        context.setLineWidth(set.highlightLineWidth)
-        context.setStrokeColor(set.highlightLineColor.cgColor)
-        context.setAlpha(set.highlightLineAlpha)
-        context.move(to: CGPoint(x: point.x, y: viewPortHandler.contentTop))
-        context.addLine(to: CGPoint(x: point.x, y: barRect.origin.y - set.highlightLineBottomMargin))
-        context.strokePath()
-
     }
 }

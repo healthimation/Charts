@@ -822,6 +822,34 @@ open class LineChartRenderer: LineRadarRenderer
                     if (!set.isHighlightEnabled) { continue }
                     drawEntries(context: context, dataSet: set, scale: scale, alpha: alpha)
                 }
+
+                // -------------------- ARROW PART --------------------
+                guard let set = lineData.getDataSetByIndex(high.dataSetIndex) as? ILineChartDataSet
+                    , set.isHighlightEnabled
+                    else { continue }
+                guard let entry = set.entryForXValue(high.x, closestToY: high.y) else { continue }
+
+                // Since it's a hacky selection:
+                //  We need circleRadius to draw arrow properly (not touching the dots), but since we can have many datasets on one x value
+                //  how to make sure that circleRadius is the one that we actually need?
+                //  (from the correct dataset, to which the arrow will be connected / drawn above)
+                // ----------------------------------------------------------------
+                // Bearing the above info in midn this code assumes 
+                //  that all datasets have the same circleRadius for this x value
+                let circleRadius = set.circleRadius * scale
+
+                var entryWithHighestY = entry
+                for set in dataSetsWithDataBetween {
+                    for e in set.entriesForXValue(entryWithHighestY.x) {
+                        if(e.y > entryWithHighestY.y) {
+                            entryWithHighestY = e
+                        }
+                    }
+                }
+
+                let trans = dataProvider.getTransformer(forAxis: set.axisDependency)
+                let pt = trans.pixelForValues(x: entryWithHighestY.x, y: entryWithHighestY.y * Double(animator.phaseY))
+                drawHighlightArrow(context: context, point: pt, set: set, insetBottom: circleRadius + CGFloat(2))
             }
         } else {
             for high in indices
@@ -873,6 +901,8 @@ open class LineChartRenderer: LineRadarRenderer
 
                     context.fillEllipse(in: rect)
                 }
+
+                drawHighlightArrow(context: context, point: pt, set: set, insetBottom: circleRadius + CGFloat(2))
             }
         }
 
