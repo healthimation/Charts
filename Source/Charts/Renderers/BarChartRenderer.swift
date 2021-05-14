@@ -440,11 +440,21 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let stackSize = isStacked ? dataSet.stackSize : 1
         let cornerRadius = dataSet.cornerRadius
         let drawRoundedCorners = dataSet.drawRoundedCorners
+
+        // -------- WARNING ----------
+        // @stackIndexCount is used here to allow easier detection of top rectangles (to make it rounded at the top).
+        // This way of doing the feature assumes that a dataset have constant stack size for each bar (like 3, 3, 3).
+        // The library allow a dataSet to contain different stack sizes (like 3, 1 ,2 ...), and the method getStackSize is
+        //  **** Returns the _MAXIMUM_ number of bars that can be stacked upon another in this DataSet ****
+
+        // So keep that in mind and if we ever need non constant stack size inside one dataSet, we will need to review
+        // the appropriate approach here
         var stackIndexCount = 1
         var isTopRect = false
 
         for j in stride(from: 0, to: buffer.count, by: 1)
         {
+            // helps to find the top bar
             isTopRect = false
             if(stackIndexCount < stackSize) {
                 stackIndexCount += 1;
