@@ -439,7 +439,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
         let cornerRadius = dataSet.cornerRadius
-        let drawRoundedCorners = dataSet.drawRoundedCorners
+        let drawRoundedCorners = cornerRadius > 0.0
 
         // -------- WARNING ----------
         // @stackIndexCount is used here to allow easier detection of top rectangles (to make it rounded at the top).
