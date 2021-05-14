@@ -41,4 +41,5 @@ public protocol IBarChartDataSet: IBarLineScatterCandleBubbleChartDataSet
     var stackLabels: [String] { get set }
     
     var cornerRadius: CGFloat { get set }
+    var minBarHeight: CGFloat { get set }
 }
