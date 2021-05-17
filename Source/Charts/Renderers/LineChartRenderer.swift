@@ -38,8 +38,6 @@ open class LineChartRenderer: LineRadarRenderer
             let dataProvider = dataProvider,
             let lineData = dataProvider.lineData
             else { return }
-        groupX = 0.0;
-        accessibilityGroupIndex = 0;
         var hasValuesToHighlight: Bool
         if let chart = dataProvider as? LineChartView {
             hasValuesToHighlight = chart.valuesToHighlight()
@@ -699,7 +697,8 @@ open class LineChartRenderer: LineRadarRenderer
                 dataSet.getCircleHoleColor(atIndex: 0) == NSUIColor.clear)
 
         let drawCirclesAsRectangles = dataSet.drawCirclesAsRectangles
-
+        groupX = 0.0;
+        accessibilityGroupIndex = 0;
         for j in _xBounds
         {
             guard let e = dataSet.entryForIndex(j) else { break }
@@ -834,7 +833,7 @@ open class LineChartRenderer: LineRadarRenderer
                 //  how to make sure that circleRadius is the one that we actually need?
                 //  (from the correct dataset, to which the arrow will be connected / drawn above)
                 // ----------------------------------------------------------------
-                // Bearing the above info in midn this code assumes 
+                // Bearing the above info in midn this code assumes
                 //  that all datasets have the same circleRadius for this x value
                 let circleRadius = set.circleRadius * scale
 
