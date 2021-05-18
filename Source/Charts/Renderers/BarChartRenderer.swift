@@ -438,7 +438,9 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
+        let isInverted = dataProvider.isInverted(axis: dataSet.axisDependency)
         let cornerRadius = dataSet.cornerRadius
+        let minBarHeight = dataSet.minBarHeight
         let drawRoundedCorners = cornerRadius > 0.0
 
         // -------- WARNING ----------
@@ -463,7 +465,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 stackIndexCount = 1;
             }
 
-            let barRect = buffer[j]
+            var barRect = buffer[j]
 
             if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
             {
@@ -483,6 +485,9 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             }
 
             let roundedCorners = drawRoundedCorners && isTopRect ? _roundedTopCorners : []
+
+            clampBarHeight(rect: &barRect, minBarHeight: minBarHeight, isInverted: isInverted)
+
             let path = UIBezierPath(roundedRect: barRect, byRoundingCorners: roundedCorners,
                                     cornerRadii: CGSize(width: cornerRadius, height: cornerRadius))
 
@@ -516,6 +521,16 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
 
                 accessibilityOrderedElements[j/stackSize].append(element)
             }
+        }
+    }
+
+    // supports !inverted && y >= 0
+    // TODO: need support for other cases...
+    func clampBarHeight(rect: inout CGRect, minBarHeight: CGFloat, isInverted: Bool) {
+        if(!isInverted && (rect.size.height < minBarHeight)) {
+            let bottom = rect.origin.y + rect.size.height
+            rect.size.height = minBarHeight
+            rect.origin.y = bottom - minBarHeight
         }
     }
 
