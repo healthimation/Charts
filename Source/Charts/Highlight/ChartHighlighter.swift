@@ -100,7 +100,8 @@ open class ChartHighlighter : NSObject, IHighlighter
         rounding: ChartDataSetRounding) -> [Highlight]
     {
         guard let chart = self.chart as? BarLineScatterCandleBubbleChartDataProvider else { return [] }
-        
+        var highlights = [Highlight]()
+
         var entries = set.entriesForXValue(xValue)
         if entries.count == 0, let closest = set.entryForXValue(xValue, closestToY: .nan, rounding: rounding)
         {
@@ -108,12 +109,17 @@ open class ChartHighlighter : NSObject, IHighlighter
             entries = set.entriesForXValue(closest.x)
         }
 
-        return entries.map { e in
+        for e in entries {
+
+            if(!isInBoundsX(x: e.x)) { continue };
+
             let px = chart.getTransformer(forAxis: set.axisDependency)
                 .pixelForValues(x: e.x, y: e.y)
-            
-            return Highlight(x: e.x, y: e.y, xPx: px.x, yPx: px.y, dataSetIndex: dataSetIndex, axis: set.axisDependency)
+
+            highlights.append(Highlight(x: e.x, y: e.y, xPx: px.x, yPx: px.y, dataSetIndex: dataSetIndex, axis: set.axisDependency))
         }
+
+        return highlights
     }
 
     // - MARK: - Utilities
@@ -179,5 +185,20 @@ open class ChartHighlighter : NSObject, IHighlighter
     internal var data: ChartData?
     {
         return chart?.data
+    }
+
+    // TODO: maybe include x === maxX || x === minX ?
+    // The next is how it's done in ViewPortHandler's isInBoundsLeft - return mContentRect.left <= x + 1;
+    internal func isInBoundsX(x: Double) -> Bool {
+
+        guard let chart = self.chart as? BarLineScatterCandleBubbleChartDataProvider else { return false }
+
+        let minX = chart.lowestVisibleX
+        let maxX = chart.highestVisibleX
+
+        if(x < maxX && x > minX) {
+            return true;
+        }
+        return false;
     }
 }
