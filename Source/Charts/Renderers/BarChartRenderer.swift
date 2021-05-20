@@ -394,13 +394,14 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             for j in stride(from: 0, to: buffer.rects.count, by: 1)
             {
                 let barRect = buffer.rects[j]
-
-                if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
+                
+                let xCoord = barRect.origin.x + barRect.size.width / 2
+                if (!viewPortHandler.isInBoundsLeft(xCoord))
                 {
                     continue
                 }
 
-                if (!viewPortHandler.isInBoundsRight(barRect.origin.x))
+                if (!viewPortHandler.isInBoundsRight(xCoord))
                 {
                     break
                 }
@@ -466,13 +467,14 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             }
 
             var barRect = buffer[j]
+            let xCoord = barRect.origin.x + barRect.size.width / 2
 
-            if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
+            if (!viewPortHandler.isInBoundsLeft(xCoord))
             {
                 continue
             }
 
-            if (!viewPortHandler.isInBoundsRight(barRect.origin.x))
+            if (!viewPortHandler.isInBoundsRight(xCoord))
             {
                 break
             }

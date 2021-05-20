@@ -16,11 +16,23 @@ import CoreGraphics
 open class LineChartView: BarLineChartViewBase, LineChartDataProvider
 {
 
-    @objc open var enableGroupHighlighter = false
+    private var _enableGroupHighlighter = false
+
+    @objc open var enableGroupHighlighter: Bool {
+        get { return _enableGroupHighlighter }
+        set {
+            _enableGroupHighlighter = newValue
+            if(newValue) {
+                self.highlighter = GroupLineHighlighter(chart: self)
+            } else {
+                self.highlighter = ChartHighlighter(chart: self)
+            }
+        }
+    }
 
     @objc open var isGroupSelectionEnabled: Bool
     {
-        return enableGroupHighlighter
+        return _enableGroupHighlighter
     }
 
     internal override func initialize()
