@@ -619,8 +619,9 @@ open class LineChartRenderer: LineRadarRenderer
                 { (element) in
                     element.accessibilityFrame = accessibilityRect
                 }
-
-                accessibilityOrderedElements[indexOfDataSet].append(element)
+                if accessibilityOrderedElements.count > indexOfDataSet {
+                    accessibilityOrderedElements[indexOfDataSet].append(element)
+                }
             }
         } else {
             if groupX.contains(e.x) { return }
@@ -655,7 +656,10 @@ open class LineChartRenderer: LineRadarRenderer
                 { (element) in
                     element.accessibilityFrame = accessibilityRect
                 }
-                accessibilityOrderedElements[accessibilityGroupIndex].append(element)
+
+                if accessibilityOrderedElements.count > accessibilityGroupIndex {
+                    accessibilityOrderedElements[accessibilityGroupIndex].append(element)
+                }
             }
             accessibilityGroupIndex+=1
         }
