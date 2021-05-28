@@ -53,6 +53,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
     // [CGRect] per dataset
     private var _buffers = [Buffer]()
     private var _roundedTopCorners: UIRectCorner = [.topLeft, .topRight]
+    private var sortedEntries: [ChartDataEntry] = [];
 
     open override func initBuffers()
     {
@@ -271,7 +272,6 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                     barRect.size.width = right - left
                     barRect.origin.y = top
                     barRect.size.height = bottom - top
-
                     buffer.rects[bufferIndex] = barRect
                     bufferIndex += 1
                 }
@@ -312,6 +312,14 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             accessibleChartElements.append(element)
         }
 
+        sortedEntries = []
+        for i in 0 ..< barData.dataSetCount{
+            guard let set = barData.getDataSetByIndex(i) else { continue }
+            for i in 0 ..< set.entryCount {
+                sortedEntries.append(set.entryForIndex(i) as! ChartDataEntry)
+            }
+        }
+        sortedEntries.sort {$0.x < $1.x}
         // Populate logically ordered nested elements into accessibilityOrderedElements in drawDataSet()
         for i in 0 ..< barData.dataSetCount
         {
@@ -518,12 +526,27 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                                                       dataSetIndex: dataSetIndex,
                                                       stackSize: stackSize)
                 { (element) in
-                    element.accessibilityFrame = barRect
+                    if dataSet.isStacked && isTopRect {
+                        let height = barRect.height + buffer[j - 1].height + buffer[j - 2].height
+                        element.accessibilityFrame = CGRect(x: barRect.minX, y: barRect.minY, width: barRect.width, height: height)
+                    } else {
+                        element.accessibilityFrame = barRect
+                    }
+                    
                 }
-
-                accessibilityOrderedElements[j/stackSize].append(element)
+                if isTopRect {
+                    let entry = dataSet.entryForIndex(j/stackSize) as! BarChartDataEntry
+                    accessibilityOrderedElements[entryIndexByX(x: entry.x)].append(element)
+                }
             }
         }
+    }
+    
+    func entryIndexByX(x: Double) -> Int {
+        guard
+            let index = sortedEntries.firstIndex(where: {$0.x == x})
+        else { return -1 }
+        return index
     }
 
     // supports !inverted && y >= 0
@@ -929,10 +952,9 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         guard let chart = dataProvider as? BarChartView else { return [] }
 
         // Unlike Bubble & Line charts, here we use the maximum entry count to account for stacked bars
-        let maxEntryCount = chart.data?.maxEntryCountSet?.entryCount ?? 0
-
+        let maxEntryCount = chart.data?.entryCount ?? 0
         return Array(repeating: [NSUIAccessibilityElement](),
-                     count: maxEntryCount)
+                     count: maxEntryCount + 1)
     }
 
     /// Creates an NSUIAccessibleElement representing the smallest meaningful bar of the chart
@@ -991,6 +1013,18 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         let doesContainMultipleDataSets = dataSetCount > 1
 
         element.accessibilityLabel = e.accessibilityLabel
+        element.accessibilityTraits = UIAccessibilityTraits.button
+
+        modifier(element)
+
+        return element
+    }
+    
+    internal func createAccessibleElement(container: BarChartView,
+                                          entry: ChartDataEntry,
+                                          modifier: (NSUIAccessibilityElement) -> ()) -> NSUIAccessibilityElement {
+        let element = NSUIAccessibilityElement(accessibilityContainer: container)
+        element.accessibilityLabel = entry.accessibilityLabel
         element.accessibilityTraits = UIAccessibilityTraits.button
 
         modifier(element)

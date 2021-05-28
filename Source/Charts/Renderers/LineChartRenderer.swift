@@ -22,7 +22,7 @@ open class LineChartRenderer: LineRadarRenderer
 
     @objc open weak var dataProvider: LineChartDataProvider?
 
-    private var groupX: Double = 0.0;
+    private var groupX: [Double] = [];
     private var accessibilityGroupIndex: Int = 0;
 
     @objc public init(dataProvider: LineChartDataProvider, animator: Animator, viewPortHandler: ViewPortHandler)
@@ -578,7 +578,7 @@ open class LineChartRenderer: LineRadarRenderer
         let scale = isMakeUnhighlightedEntriesSmalledEnabled && hasValuesToHighlight ? decreaseScale : CGFloat(1.0)
         // TODO: alpha type should be reviewed?
         let alpha = isDimmingEnabled && hasValuesToHighlight ? CGFloat(Double(dimmingAlpha)/255.0) : CGFloat(1.0)
-
+        groupX = [];
         for set in dataSets {
             drawEntries(context: context, dataSet: set as! ILineChartDataSet, scale: scale, alpha: alpha)
         }
@@ -619,13 +619,13 @@ open class LineChartRenderer: LineRadarRenderer
                 { (element) in
                     element.accessibilityFrame = accessibilityRect
                 }
-
-                accessibilityOrderedElements[indexOfDataSet].append(element)
+                if accessibilityOrderedElements.count > indexOfDataSet {
+                    accessibilityOrderedElements[indexOfDataSet].append(element)
+                }
             }
         } else {
-            if groupX == e.x { return }
-
-            groupX = e.x
+            if groupX.contains(e.x) { return }
+            groupX.append(e.x)
             let dataSets = lineData.dataSets
             var dataSetsWithDataBetween: [ILineChartDataSet] = []
 
@@ -656,7 +656,10 @@ open class LineChartRenderer: LineRadarRenderer
                 { (element) in
                     element.accessibilityFrame = accessibilityRect
                 }
-                accessibilityOrderedElements[accessibilityGroupIndex].append(element)
+
+                if accessibilityOrderedElements.count > accessibilityGroupIndex {
+                    accessibilityOrderedElements[accessibilityGroupIndex].append(element)
+                }
             }
             accessibilityGroupIndex+=1
         }
@@ -697,7 +700,6 @@ open class LineChartRenderer: LineRadarRenderer
                 dataSet.getCircleHoleColor(atIndex: 0) == NSUIColor.clear)
 
         let drawCirclesAsRectangles = dataSet.drawCirclesAsRectangles
-        groupX = 0.0;
         accessibilityGroupIndex = 0;
         for j in _xBounds
         {
