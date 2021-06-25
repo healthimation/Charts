@@ -59,7 +59,7 @@ open class ChartData: NSObject
     
     @objc open func calcMinMaxY(fromX: Double, toX: Double)
     {
-        // each dataset calculates min max inside itself
+        // each dataset calculates min max inside itself(the results are stored in each dataset)
         _dataSets.forEach { $0.calcMinMaxY(fromX: fromX, toX: toX) }
 
         var dataSetsWithDataBetween = [IChartDataSet]();
@@ -75,75 +75,14 @@ open class ChartData: NSObject
         calcMinMax(dataSets: dataSetsWithDataBetween)
     }
     
-    /// calc minimum and maximum y value over all datasets
+    // old method (before fork)
     @objc open func calcMinMax()
     {
-        _yMax = -Double.greatestFiniteMagnitude
-        _yMin = Double.greatestFiniteMagnitude
-        _xMax = -Double.greatestFiniteMagnitude
-        _xMin = Double.greatestFiniteMagnitude
-        
-        // calculated absolute min and max among all the datasets | + min and max for left and right axises
-        _dataSets.forEach { calcMinMax(dataSet: $0) }
-        
-        // why do we need this???? isn't all needed already happened in _dataSets.forEach { calcMinMax(dataSet: $0) } ???
-        _leftAxisMax = -Double.greatestFiniteMagnitude
-        _leftAxisMin = Double.greatestFiniteMagnitude
-        _rightAxisMax = -Double.greatestFiniteMagnitude
-        _rightAxisMin = Double.greatestFiniteMagnitude
-        
-        // left axis
-        let firstLeft = getFirstLeft(dataSets: dataSets)
-        
-        if firstLeft !== nil
-        {
-            _leftAxisMax = firstLeft!.yMax
-            _leftAxisMin = firstLeft!.yMin
-            
-            for dataSet in _dataSets
-            {
-                if dataSet.axisDependency == .left
-                {
-                    if dataSet.yMin < _leftAxisMin
-                    {
-                        _leftAxisMin = dataSet.yMin
-                    }
-                    
-                    if dataSet.yMax > _leftAxisMax
-                    {
-                        _leftAxisMax = dataSet.yMax
-                    }
-                }
-            }
-        }
-        
-        // right axis
-        let firstRight = getFirstRight(dataSets: dataSets)
-        
-        if firstRight !== nil
-        {
-            _rightAxisMax = firstRight!.yMax
-            _rightAxisMin = firstRight!.yMin
-            
-            for dataSet in _dataSets
-            {
-                if dataSet.axisDependency == .right
-                {
-                    if dataSet.yMin < _rightAxisMin
-                    {
-                        _rightAxisMin = dataSet.yMin
-                    }
-                    
-                    if dataSet.yMax > _rightAxisMax
-                    {
-                        _rightAxisMax = dataSet.yMax
-                    }
-                }
-            }
-        }
+        calcMinMax(dataSets: _dataSets);
     }
 
-    /// calc minimum and maximum y value over all datasets
+    // Goes through all the dataSets to find the min and max 
+    // (using min and max precalculated stored values inside each dataSet)
     @objc open func calcMinMax(dataSets: [IChartDataSet])
     {
 
@@ -542,6 +481,7 @@ open class ChartData: NSObject
             
             if !set.addEntry(e) { return }
             
+            // Adjust previously calculated min and max values
             calcMinMax(entry: e, axis: set.axisDependency)
         }
         else

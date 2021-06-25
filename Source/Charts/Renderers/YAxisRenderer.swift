@@ -122,7 +122,8 @@ open class YAxisRenderer: AxisRendererBase
         fixedPosition: CGFloat,
         positions: [CGPoint],
         offset: CGFloat,
-        textAlign: NSTextAlignment)
+        textAlign: NSTextAlignment,
+        replace: String? = nil)
     {
         guard
             let yAxis = self.axis as? YAxis
@@ -136,7 +137,12 @@ open class YAxisRenderer: AxisRendererBase
         
         for i in stride(from: from, to: to, by: 1)
         {
-            let text = yAxis.getFormattedLabel(i)
+            var text: String;
+            if let x = replace {
+                text = x;
+            } else {
+                text = yAxis.getFormattedLabel(i)
+            }
             
             ChartUtils.drawText(
                 context: context,

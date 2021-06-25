@@ -169,19 +169,19 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, IBarChartDat
         return copy
     }
 
-    // open override func calcMinMaxY(fromX: Double, toX: Double)
-    // {
-    //     _yMax = -Double.greatestFiniteMagnitude
-    //     _yMin = Double.greatestFiniteMagnitude
+    open override func calcMinMaxY(fromX: Double, toX: Double)
+    {
+        _yMax = -Double.greatestFiniteMagnitude
+        _yMin = Double.greatestFiniteMagnitude
 
-    //     guard !isEmpty else { return }
+        guard !isEmpty else { return }
         
-    //     // TODO: what if the dataset have two entries with the same x-value? (what's the behavior right now?)
-    //     let indexFrom = entryIndex(x: fromX, closestToY: Double.nan, rounding: .up)
-    //     let indexTo = entryIndex(x: toX, closestToY: Double.nan, rounding: .down)
+        // TODO: what if the dataset have two entries with the same x-value? (what's the behavior right now?)
+        let indexFrom = entryIndex(x: fromX, closestToY: Double.nan, rounding: .up)
+        let indexTo = entryIndex(x: toX, closestToY: Double.nan, rounding: .down)
         
-    //     guard !(indexTo < indexFrom) else { return }
-    //     // only recalculate y
-    //     self[indexFrom...indexTo].forEach(calcMinMaxY)
-    // }
+        guard !(indexTo < indexFrom) else { return }
+        // only recalculate y
+        self[indexFrom...indexTo].forEach(calcMinMaxY)
+    }
 }
