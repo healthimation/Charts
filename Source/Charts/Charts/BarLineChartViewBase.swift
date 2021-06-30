@@ -21,6 +21,8 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
 
     /// flag that indicates if auto scaling on the y axis is enabled
     private var _autoScaleMinMaxEnabled = false
+    private var _allowDashesWhenChartIsEmpty = false
+    private var _amountOfDashes = 6
 
     @objc open var enableEnlargementOnHighlight = false
     @objc open var makeUnhighlightedEntriesSmallerEnabled = false
@@ -207,6 +209,17 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
 
         guard data != nil, let renderer = renderer else { return }
 
+        guard data?.dataSets != nil, let dataSets = data?.dataSets else { return }
+
+        var hasDataVisible = false;
+        for i in 0 ..< dataSets.count {
+            var set = dataSets[i];
+            if(set.containsEntriesAtXValue(fromX: self.lowestVisibleX, toX: self.highestVisibleX)) {
+                hasDataVisible = true;
+                break;
+            }
+        }
+
         let optionalContext = NSUIGraphicsGetCurrentContext()
         guard let context = optionalContext else { return }
 
@@ -293,7 +306,15 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
 
         xAxisRenderer.renderAxisLabels(context: context)
         leftYAxisRenderer.renderAxisLabels(context: context)
-        rightYAxisRenderer.renderAxisLabels(context: context)
+        if(_autoScaleMinMaxEnabled && _allowDashesWhenChartIsEmpty) {
+            if(hasDataVisible) {
+                rightYAxisRenderer.renderAxisLabels(context: context)
+            } else {
+                rightYAxisRenderer.renderDashedAxis(context: context, numberOfDashes: _amountOfDashes)
+            }
+        } else {
+            rightYAxisRenderer.renderAxisLabels(context: context)
+        }
 
         if clipValuesToContentEnabled
         {
@@ -1858,6 +1879,17 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         set { _autoScaleMinMaxEnabled = newValue }
     }
 
+    @objc open var allowDashesWhenChartIsEmpty: Bool
+    {
+        get { return _allowDashesWhenChartIsEmpty }
+        set { _allowDashesWhenChartIsEmpty = newValue }
+    }
+
+    @objc open var amountOfDashes: Int {
+        get { return _amountOfDashes }
+        set { _amountOfDashes = newValue }
+    }
+
     @objc open var accessibilityChartLabel: String
     {
         get { return _accessibilityChartLabel }
@@ -1866,10 +1898,6 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
             _accessibilityChartLabel = newValue
         }
     }
-
-    /// **default**: false
-    /// `true` if auto scaling on the y axis is enabled.
-    @objc open var isAutoScaleMinMaxEnabled : Bool { return autoScaleMinMaxEnabled }
 
     /// Sets a minimum width to the specified y axis.
     @objc open func setYAxisMinWidth(_ axis: YAxis.AxisDependency, width: CGFloat)
