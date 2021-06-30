@@ -19,27 +19,16 @@ open class YAxisRenderer: AxisRendererBase
     {
         super.init(viewPortHandler: viewPortHandler, transformer: transformer, axis: yAxis)
     }
-    
-    /// draws the y-axis labels to the screen
-    open override func renderAxisLabels(context: CGContext)
-    {
-        guard let yAxis = self.axis as? YAxis else { return }
-        
-        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled
-        {
-            return
-        }
-        
+
+    open func preparePaintAndGetXPos(yAxis: YAxis) -> (CGFloat, NSTextAlignment) {
         let xoffset = yAxis.xOffset
-        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset
-        
         let dependency = yAxis.axisDependency
         let labelPosition = yAxis.labelPosition
         
         var xPos = CGFloat(0.0)
-        
+
         var textAlign: NSTextAlignment
-        
+
         if dependency == .left
         {
             if labelPosition == .outsideChart
@@ -67,11 +56,83 @@ open class YAxisRenderer: AxisRendererBase
                 xPos = viewPortHandler.contentRight - xoffset
             }
         }
+
+        return (xPos, textAlign);
+    }
+
+    open func renderDashedAxis(context: CGContext, numberOfDashes: Int) {
+        guard let yAxis = self.axis as? YAxis else { return }
+        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
+
+        let (xPos, textAlign) = preparePaintAndGetXPos(yAxis: yAxis)
+        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset
+        let positions = getHandMadePositions(numberOfDashes: numberOfDashes);
+
+        drawDashLabels(
+            context: context,
+            fixedPosition: xPos,
+            positions: positions,
+            offset: yoffset - yAxis.labelFont.lineHeight,
+            textAlign: textAlign)
+    }
+
+    @objc open func getHandMadePositions(numberOfDashes: Int) -> [CGPoint] {
+        guard
+            let yAxis = self.axis as? YAxis,
+            let transformer = self.transformer
+            else { return [CGPoint]() }
         
+        var positions = [CGPoint]()
+        positions.reserveCapacity(numberOfDashes)
+
+        let top = viewPortHandler.contentTop
+        let bottom = viewPortHandler.contentBottom
+        let range = abs(abs(top) - abs(bottom))
+        let intervalInPixels = Double(range) / Double(numberOfDashes - 1)
+        
+        for i in stride(from: 0, to: numberOfDashes, by: 1)
+        {
+            positions.append(CGPoint(x: 0.0, y: top + CGFloat(Double(i) * intervalInPixels)))
+        }
+
+        return positions
+    }
+
+    internal func drawDashLabels(context: CGContext, fixedPosition: CGFloat, positions: [CGPoint], offset: CGFloat, textAlign: NSTextAlignment){
+        guard
+            let yAxis = self.axis as? YAxis
+            else { return }
+        
+        let labelFont = yAxis.labelFont
+        let labelTextColor = yAxis.labelTextColor
+
+        let from = 0
+        let to = positions.count
+
+        for i in stride(from: from, to: to, by: 1) {
+            ChartUtils.drawText(
+                context: context,
+                text: "-",
+                point: CGPoint(x: fixedPosition, y: positions[i].y + offset),
+                align: textAlign,
+                attributes: [.font: labelFont, .foregroundColor: labelTextColor]
+            )
+        }
+    }
+    
+    /// draws the y-axis labels to the screen
+    open override func renderAxisLabels(context: CGContext) {
+        guard let yAxis = self.axis as? YAxis else { return }
+        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
+        
+        let (xPos, textAlign) = preparePaintAndGetXPos(yAxis: yAxis)
+        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset
+        let positions = transformedPositions();
+
         drawYLabels(
             context: context,
             fixedPosition: xPos,
-            positions: transformedPositions(),
+            positions: positions,
             offset: yoffset - yAxis.labelFont.lineHeight,
             textAlign: textAlign)
     }
@@ -136,6 +197,7 @@ open class YAxisRenderer: AxisRendererBase
         
         for i in stride(from: from, to: to, by: 1)
         {
+            
             let text = yAxis.getFormattedLabel(i)
             
             ChartUtils.drawText(

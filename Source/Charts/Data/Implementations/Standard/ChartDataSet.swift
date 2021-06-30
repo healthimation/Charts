@@ -303,7 +303,6 @@ open class ChartDataSet: ChartBaseDataSet
         
         while low < high
         {
-            // what if low is 0 and high is 1?
             let m = (low + high) / 2
             
             let d1 = self[m].x - xValue
