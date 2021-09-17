@@ -945,6 +945,22 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
         high.setDraw(x: barRect.midX, y: barRect.origin.y)
     }
 
+    @objc override open func drawTargetValue(context: CGContext) {
+
+        guard let dataProvider = dataProvider else { return }
+
+        let trans = dataProvider.getTransformer(forAxis: .right)
+        let point = trans.pixelForValues(x: 0, y: Double(dataProvider.getTargetValue) * Double(animator.phaseY))
+
+        context.setStrokeColor(dataProvider.getTargetLineColor.cgColor)
+        context.setLineWidth(dataProvider.getTargetLineWidth)
+
+        context.beginPath()
+        context.move(to: CGPoint(x: viewPortHandler.contentLeft, y: point.y))
+        context.addLine(to: CGPoint(x: viewPortHandler.contentRight, y: point.y))
+        context.strokePath()
+    }
+
     /// Creates a nested array of empty subarrays each of which will be populated with NSUIAccessibilityElements.
     /// This is marked internal to support HorizontalBarChartRenderer as well.
     internal func accessibilityCreateEmptyOrderedElements() -> [[NSUIAccessibilityElement]]

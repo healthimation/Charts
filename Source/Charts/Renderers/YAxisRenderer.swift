@@ -60,6 +60,9 @@ open class YAxisRenderer: AxisRendererBase
         return (xPos, textAlign);
     }
 
+    /**
+     * Draws Y Axis with dashed instead of values
+     */
     open func renderDashedAxis(context: CGContext, numberOfDashes: Int) {
         guard let yAxis = self.axis as? YAxis else { return }
         if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
@@ -118,6 +121,51 @@ open class YAxisRenderer: AxisRendererBase
                 attributes: [.font: labelFont, .foregroundColor: labelTextColor]
             )
         }
+    }
+
+    open override func renderTargetValue(context: CGContext, value: CGFloat) {
+        guard 
+            let yAxis = self.axis as? YAxis,
+            let transformer = self.transformer
+            else { return }
+
+        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
+
+        let labelFont = yAxis.labelFont
+        let labelTextColor = yAxis.targetTextColor
+
+        let text = yAxis.valueFormatter?.stringForValue(Double(value), axis: yAxis) ?? ""
+
+        var positions = [CGPoint]()
+        positions.reserveCapacity(1)
+        positions.append(CGPoint(x: 0.0, y: value))
+        transformer.pointValuesToPixel(&positions)
+
+        let (xPos, textAlign) = preparePaintAndGetXPos(yAxis: yAxis)
+        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset - yAxis.labelFont.lineHeight
+        let yPos = positions[0].y + yoffset
+
+        let textHeight = yAxis.labelFont.lineHeight
+        let textWidth = text.size(withAttributes: [.font: labelFont, .foregroundColor: labelTextColor]).width
+
+        context.saveGState()
+        let padding = yAxis.targetBackgroundPadding
+        let radius = yAxis.targetBackgroundRadius
+        let rect = CGRect(x: xPos - padding, y: yPos, width: textWidth + 2*padding, height: textHeight + padding)
+        let clipPath: CGPath = UIBezierPath(roundedRect: rect, cornerRadius: radius).cgPath
+        context.addPath(clipPath)
+        context.setFillColor(yAxis.targetBackgroundColor.cgColor)
+        context.closePath()
+        context.fillPath()
+        context.restoreGState()
+
+        ChartUtils.drawText(
+                context: context,
+                text: text,
+                point: CGPoint(x: xPos, y: yPos),
+                align: textAlign,
+                attributes: [.font: labelFont, .foregroundColor: labelTextColor]
+            )
     }
     
     /// draws the y-axis labels to the screen

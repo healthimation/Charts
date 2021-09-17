@@ -34,6 +34,12 @@ open class AxisRendererBase: Renderer
     {
         fatalError("renderAxisLabels() cannot be called on AxisRendererBase")
     }
+
+    /// Draws the target value on the specified context
+    @objc open func renderTargetValue(context: CGContext, value: CGFloat)
+    {
+        fatalError("renderTargetValue() cannot be called on AxisRendererBase")
+    }
     
     /// Draws the grid lines belonging to the axis.
     @objc open func renderGridLines(context: CGContext)

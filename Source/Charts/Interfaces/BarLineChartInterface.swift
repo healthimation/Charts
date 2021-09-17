@@ -22,4 +22,9 @@ public protocol BarLineChartInterface: BarLineScatterCandleBubbleChartDataProvid
     var getEnlargementScaleForHighlightedEntry: CGFloat { get }
     var getDecreaseScaleForUnhighlightedEntry: CGFloat { get }
     var getDimmingAlpha: NSInteger { get }
+
+    var getTargetValue: CGFloat { get }
+    var isTargetEnabled: Bool { get }
+    var getTargetLineWidth: CGFloat { get }
+    var getTargetLineColor: NSUIColor { get }
 }
