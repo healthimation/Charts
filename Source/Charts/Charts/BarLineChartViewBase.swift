@@ -338,17 +338,21 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         leftYAxisRenderer.renderAxisLabels(context: context)
         if(_autoScaleMinMaxEnabled && _allowDashesWhenChartIsEmpty) {
             if(hasDataVisible) {
-                rightYAxisRenderer.renderAxisLabels(context: context)
                 if(targetEnabled) {
+                    rightYAxisRenderer.renderAxisLabelsWithSpaceForTarget(context: context, targetValue: targetValue)
                     rightYAxisRenderer.renderTargetValue(context: context, value: targetValue)
+                } else {
+                    rightYAxisRenderer.renderAxisLabels(context: context)
                 }
             } else {
                 rightYAxisRenderer.renderDashedAxis(context: context, numberOfDashes: _amountOfDashes)
             }
         } else {
-            rightYAxisRenderer.renderAxisLabels(context: context)
             if(targetEnabled) {
+                rightYAxisRenderer.renderAxisLabelsWithSpaceForTarget(context: context, targetValue: targetValue)
                 rightYAxisRenderer.renderTargetValue(context: context, value: targetValue)
+            } else {
+                rightYAxisRenderer.renderAxisLabels(context: context)
             }
         }
 
