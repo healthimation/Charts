@@ -195,7 +195,7 @@ open class YAxisRenderer: AxisRendererBase
 
         let targetPosition = targetPositionArray[0];
         let halfHeight = yAxis.labelFont.lineHeight / 2.7;
-        let indexesToSkip = getIndexesOfOverlappingPositions(positions: positions, halfHeight: halfHeight, testPosition: targetPosition);
+        let indexesToSkip = getIndexesOfOverlappingPositions(positions: positions, halfHeight: halfHeight, anchorPosition: targetPosition);
         //--------------
 
         drawYLabels(
