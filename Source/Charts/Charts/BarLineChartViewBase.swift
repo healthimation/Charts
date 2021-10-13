@@ -30,7 +30,14 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
     @objc open var dimmingAlpha = 120
     @objc open var decreaseScaleForUnhighlightedEntry: CGFloat = 0.8
     @objc open var enlargementScaleForHighlightedEntry: CGFloat = 1.2
-    
+
+    /** TARGET VALUE props */
+    @objc open var targetValue: CGFloat = 3500.0
+    @objc open var targetEnabled = true
+    @objc open var targetLineWidth: CGFloat = 2.0
+    @objc open var targetLineColor = NSUIColor.green
+    /** TARGET VALUE props END*/
+
     private var _accessibilityChartLabel = "Chart"
 
     private var _pinchZoomEnabled = false
@@ -54,6 +61,26 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
     @objc open var isDimmingEnabled: Bool
     {
         return enableDimming
+    }
+
+    @objc open var getTargetValue: CGFloat
+    {
+        return targetValue
+    }
+
+    @objc open var isTargetEnabled: Bool
+    {
+        return targetEnabled
+    }
+
+    @objc open var getTargetLineWidth: CGFloat
+    {
+        return targetLineWidth
+    }
+
+    @objc open var getTargetLineColor: NSUIColor
+    {
+        return targetLineColor
     }
 
     @objc open var getEnlargementScaleForHighlightedEntry: CGFloat
@@ -277,6 +304,9 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         if clipDataToContentEnabled {
             context.clip(to: _viewPortHandler.contentRect)
         }
+        if(hasDataVisible && targetEnabled) {
+            renderer.drawTargetValue(context: context)
+        }
         renderer.drawData(context: context)
 
         renderer.drawExtras(context: context)
@@ -308,12 +338,22 @@ open class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChartD
         leftYAxisRenderer.renderAxisLabels(context: context)
         if(_autoScaleMinMaxEnabled && _allowDashesWhenChartIsEmpty) {
             if(hasDataVisible) {
-                rightYAxisRenderer.renderAxisLabels(context: context)
+                if(targetEnabled) {
+                    rightYAxisRenderer.renderAxisLabelsWithSpaceForTarget(context: context, targetValue: targetValue)
+                    rightYAxisRenderer.renderTargetValue(context: context, value: targetValue)
+                } else {
+                    rightYAxisRenderer.renderAxisLabels(context: context)
+                }
             } else {
                 rightYAxisRenderer.renderDashedAxis(context: context, numberOfDashes: _amountOfDashes)
             }
         } else {
-            rightYAxisRenderer.renderAxisLabels(context: context)
+            if(targetEnabled) {
+                rightYAxisRenderer.renderAxisLabelsWithSpaceForTarget(context: context, targetValue: targetValue)
+                rightYAxisRenderer.renderTargetValue(context: context, value: targetValue)
+            } else {
+                rightYAxisRenderer.renderAxisLabels(context: context)
+            }
         }
 
         if clipValuesToContentEnabled

@@ -60,6 +60,9 @@ open class YAxisRenderer: AxisRendererBase
         return (xPos, textAlign);
     }
 
+    /**
+     * Draws Y Axis with dashed instead of values
+     */
     open func renderDashedAxis(context: CGContext, numberOfDashes: Int) {
         guard let yAxis = self.axis as? YAxis else { return }
         if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
@@ -119,6 +122,40 @@ open class YAxisRenderer: AxisRendererBase
             )
         }
     }
+
+    open override func renderTargetValue(context: CGContext, value: CGFloat) {
+        guard 
+            let yAxis = self.axis as? YAxis,
+            let transformer = self.transformer
+            else { return }
+
+        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
+
+        let labelFont = yAxis.labelFont
+        let labelTextColor = yAxis.targetTextColor
+
+        let text = yAxis.valueFormatter?.stringForValue(Double(value), axis: yAxis) ?? ""
+
+        var positions = [CGPoint]()
+        positions.reserveCapacity(1)
+        positions.append(CGPoint(x: 0.0, y: value))
+        transformer.pointValuesToPixel(&positions)
+
+        let (xPos, textAlign) = preparePaintAndGetXPos(yAxis: yAxis)
+        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset - yAxis.labelFont.lineHeight
+        let yPos = positions[0].y + yoffset
+
+        let textHeight = yAxis.labelFont.lineHeight
+        let textWidth = text.size(withAttributes: [.font: labelFont, .foregroundColor: labelTextColor]).width
+
+        ChartUtils.drawText(
+                context: context,
+                text: text,
+                point: CGPoint(x: xPos, y: yPos),
+                align: textAlign,
+                attributes: [.font: labelFont, .foregroundColor: labelTextColor]
+            )
+    }
     
     /// draws the y-axis labels to the screen
     open override func renderAxisLabels(context: CGContext) {
@@ -135,6 +172,39 @@ open class YAxisRenderer: AxisRendererBase
             positions: positions,
             offset: yoffset - yAxis.labelFont.lineHeight,
             textAlign: textAlign)
+    }
+
+    /// draws the y-axis labels to the screen
+    open func renderAxisLabelsWithSpaceForTarget(context: CGContext, targetValue: CGFloat) {
+        guard
+            let yAxis = self.axis as? YAxis,
+            let transformer = self.transformer
+            else { return }
+
+        if !yAxis.isEnabled || !yAxis.isDrawLabelsEnabled { return }
+        
+        let (xPos, textAlign) = preparePaintAndGetXPos(yAxis: yAxis)
+        let yoffset = yAxis.labelFont.lineHeight / 2.5 + yAxis.yOffset
+        let positions = transformedPositions();
+
+        //--------------
+        var targetPositionArray = [CGPoint]()
+        targetPositionArray.reserveCapacity(1)
+        targetPositionArray.append(CGPoint(x: 0.0, y: targetValue))
+        transformer.pointValuesToPixel(&targetPositionArray)
+
+        let targetPosition = targetPositionArray[0];
+        let halfHeight = yAxis.labelFont.lineHeight / 2.7;
+        let indexesToSkip = getIndexesOfOverlappingPositions(positions: positions, halfHeight: halfHeight, anchorPosition: targetPosition);
+        //--------------
+
+        drawYLabels(
+            context: context,
+            fixedPosition: xPos,
+            positions: positions,
+            offset: yoffset - yAxis.labelFont.lineHeight,
+            textAlign: textAlign,
+            indexesToSkip: indexesToSkip)
     }
     
     open override func renderAxisLine(context: CGContext)
@@ -176,6 +246,22 @@ open class YAxisRenderer: AxisRendererBase
         
         context.restoreGState()
     }
+
+    /**
+     * Gets indexes of positions of y axis labels overlapping a target label to get rid of them later from Y axis
+     * halfHeight is a half of a space needed for drawing a label
+     */
+    func getIndexesOfOverlappingPositions(positions: [CGPoint], halfHeight: CGFloat, anchorPosition: CGPoint) -> [Int] {
+        var resultArray: [Int] = [];
+        for i in stride(from: 0, to: positions.count, by: 1) {
+            let coordinate = positions[i].y;
+            let anchorY = anchorPosition.y;
+            if(coordinate - 2*halfHeight <= anchorY && anchorY <= coordinate + 2*halfHeight) {
+                resultArray.append(i);
+            }
+        }
+        return resultArray;
+    }
     
     /// draws the y-labels on the specified x-position
     internal func drawYLabels(
@@ -183,10 +269,12 @@ open class YAxisRenderer: AxisRendererBase
         fixedPosition: CGFloat,
         positions: [CGPoint],
         offset: CGFloat,
-        textAlign: NSTextAlignment)
+        textAlign: NSTextAlignment,
+        indexesToSkip: [Int] = [])
     {
         guard
-            let yAxis = self.axis as? YAxis
+            let yAxis = self.axis as? YAxis,
+            let transformer = self.transformer
             else { return }
         
         let labelFont = yAxis.labelFont
@@ -194,9 +282,13 @@ open class YAxisRenderer: AxisRendererBase
         
         let from = yAxis.isDrawBottomYLabelEntryEnabled ? 0 : 1
         let to = yAxis.isDrawTopYLabelEntryEnabled ? yAxis.entryCount : (yAxis.entryCount - 1)
-        
+
         for i in stride(from: from, to: to, by: 1)
         {
+
+            if indexesToSkip.contains(i) {
+                continue;
+            }
             
             let text = yAxis.getFormattedLabel(i)
             

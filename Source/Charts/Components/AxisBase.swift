@@ -40,6 +40,19 @@ open class AxisBase: ComponentBase
     
     @objc open var drawGridLinesEnabled = true
     @objc open var drawAxisLineEnabled = true
+
+    // TARGET PROPS
+    @objc open var targetTextColor = NSUIColor.black
+    @objc open var targetBackgroundColor = NSUIColor.green
+    @objc open var targetBackgroundPadding = CGFloat(5)
+    @objc open var targetBackgroundRadius = CGFloat(5)
+
+    @objc open func setTargetProps(textColor: NSUIColor, backgroundColor: NSUIColor, padding: CGFloat, radius: CGFloat) {
+        targetTextColor = textColor;
+        targetBackgroundColor = backgroundColor;
+        targetBackgroundPadding = padding;
+        targetBackgroundRadius = radius;
+    }
     
     /// flag that indicates of the labels of this axis should be drawn or not
     @objc open var drawLabelsEnabled = true

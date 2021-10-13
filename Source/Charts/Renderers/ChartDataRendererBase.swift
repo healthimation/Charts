@@ -44,6 +44,10 @@ open class DataRenderer: Renderer
     {
         fatalError("drawValues() cannot be called on DataRenderer")
     }
+
+    @objc open func drawTargetValue(context: CGContext) {
+        fatalError("drawTargetValue() cannot be called on DataRenderer")
+    }
     
     @objc open func drawExtras(context: CGContext)
     {
